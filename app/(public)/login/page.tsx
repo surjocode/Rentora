@@ -1,5 +1,9 @@
 
+"use client";
+
 import Link from "next/link";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   LockKeyhole,
@@ -7,13 +11,70 @@ import {
   ShieldCheck,
   Wrench,
 } from "lucide-react";
-
-export const metadata = {
-  title: "Login | Rentora",
-  description: "Login to your Rentora account.",
-};
+import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Email and Password Login
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe,
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setError(result.error.message || "Login failed. Please try again.");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Login
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setError(
+          result.error.message || "Google login failed. Please try again."
+        );
+        setGoogleLoading(false);
+      }
+    } catch {
+      setError("Unable to login with Google.");
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-[80vh] items-center justify-center bg-[#faf7f2] px-5 py-12 sm:px-6">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-[#eee5dc] bg-white shadow-xl md:grid-cols-2">
@@ -66,7 +127,16 @@ export default function LoginPage() {
             Enter your account details to continue.
           </p>
 
-          <form className="mt-8 space-y-6">
+          {/* Error Message */}
+          {error && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleLogin} className="mt-8 space-y-6">
+
             {/* Email */}
             <div>
               <label
@@ -87,7 +157,10 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
                   className="w-full rounded-xl border border-[#eee5dc] py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
@@ -113,7 +186,10 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                   className="w-full rounded-xl border border-[#eee5dc] py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 />
               </div>
@@ -124,7 +200,8 @@ export default function LoginPage() {
               <label className="flex items-center gap-2 text-[#665348]">
                 <input
                   type="checkbox"
-                  name="remember"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="accent-orange-600"
                 />
                 Remember me
@@ -141,12 +218,31 @@ export default function LoginPage() {
             {/* Login Button */}
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700"
+              disabled={loading || googleLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Login to Account
-              <ArrowRight size={18} />
+              {loading ? "Logging in..." : "Login to Account"}
+              {!loading && <ArrowRight size={18} />}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#eee5dc]" />
+            <span className="text-xs text-[#9a877a]">OR</span>
+            <div className="h-px flex-1 bg-[#eee5dc]" />
+          </div>
+
+          {/* Google Login */}
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading || googleLoading}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#eee5dc] px-6 py-3.5 text-sm font-semibold text-[#442719] transition hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="text-lg font-bold text-blue-600">G</span>
+            {googleLoading ? "Connecting to Google..." : "Continue with Google"}
+          </button>
 
           {/* Register Link */}
           <p className="mt-8 text-center text-sm text-[#806b5e]">

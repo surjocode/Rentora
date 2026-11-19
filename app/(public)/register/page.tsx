@@ -1,5 +1,9 @@
 
+"use client";
+
 import Link from "next/link";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Mail,
@@ -8,13 +12,85 @@ import {
   Wrench,
   ShieldCheck,
 } from "lucide-react";
-
-export const metadata = {
-  title: "Register | Rentora",
-  description: "Create your Rentora account and start renting equipment.",
-};
+import { authClient } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Email and Password Registration
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await authClient.signUp.email({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setError(
+          result.error.message || "Registration failed. Please try again."
+        );
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google Registration
+  const handleGoogleRegister = async () => {
+    setGoogleLoading(true);
+    setError("");
+
+    try {
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+
+      if (result.error) {
+        setError(
+          result.error.message || "Google registration failed."
+        );
+        setGoogleLoading(false);
+      }
+    } catch {
+      setError("Unable to register with Google.");
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-[80vh] items-center justify-center bg-[#faf7f2] px-5 py-12 sm:px-6">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl border border-[#eee5dc] bg-white shadow-xl md:grid-cols-2">
@@ -37,12 +113,16 @@ export default function RegisterPage() {
           <div className="mt-10 space-y-5">
             <div className="flex items-center gap-3">
               <ShieldCheck className="text-orange-400" size={22} />
-              <span className="text-sm">Secure Account Registration</span>
+              <span className="text-sm">
+                Secure Account Registration
+              </span>
             </div>
 
             <div className="flex items-center gap-3">
               <Wrench className="text-orange-400" size={22} />
-              <span className="text-sm">Rent or List Equipment</span>
+              <span className="text-sm">
+                Rent or List Equipment
+              </span>
             </div>
           </div>
 
@@ -67,7 +147,16 @@ export default function RegisterPage() {
             Fill in your information to join Rentora.
           </p>
 
-          <form className="mt-8 space-y-5">
+          {/* Error Message */}
+          {error && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          {/* Registration Form */}
+          <form onSubmit={handleRegister} className="mt-8 space-y-5">
+
             {/* Full Name */}
             <div>
               <label
@@ -88,6 +177,8 @@ export default function RegisterPage() {
                   name="name"
                   type="text"
                   placeholder="Enter your full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete="name"
                   className="w-full rounded-xl border border-[#eee5dc] py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -115,6 +206,8 @@ export default function RegisterPage() {
                   name="email"
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   autoComplete="email"
                   className="w-full rounded-xl border border-[#eee5dc] py-3.5 pl-12 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
@@ -142,6 +235,8 @@ export default function RegisterPage() {
                   name="password"
                   type="password"
                   placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
                   autoComplete="new-password"
@@ -174,6 +269,8 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   type="password"
                   placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={8}
                   autoComplete="new-password"
@@ -182,27 +279,15 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Account Type */}
-            <div>
-              <label
-                htmlFor="role"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
-                Account Type
-              </label>
+            {/* Account Type Information */}
+            <div className="rounded-xl border border-[#eee5dc] bg-[#faf7f2] p-4">
+              <p className="text-sm font-semibold text-[#442719]">
+                Default Account Type: Customer
+              </p>
 
-              <select
-                id="role"
-                name="role"
-                defaultValue="customer"
-                className="w-full rounded-xl border border-[#eee5dc] bg-white px-4 py-3.5 text-sm text-[#665348] outline-none transition focus:border-orange-500"
-              >
-                <option value="customer">Customer - Rent Equipment</option>
-                <option value="owner">Equipment Owner - List Equipment</option>
-              </select>
-
-              <p className="mt-2 text-xs text-[#806b5e]">
-                Admin accounts are created and managed separately.
+              <p className="mt-1 text-xs leading-5 text-[#806b5e]">
+                New accounts start with customer access. You can request
+                equipment owner access later.
               </p>
             </div>
 
@@ -230,12 +315,31 @@ export default function RegisterPage() {
             {/* Register Button */}
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700"
+              disabled={loading || googleLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-3.5 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Create My Account
-              <ArrowRight size={18} />
+              {loading ? "Creating Account..." : "Create My Account"}
+              {!loading && <ArrowRight size={18} />}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[#eee5dc]" />
+            <span className="text-xs text-[#9a877a]">OR</span>
+            <div className="h-px flex-1 bg-[#eee5dc]" />
+          </div>
+
+          {/* Google Registration */}
+          <button
+            type="button"
+            onClick={handleGoogleRegister}
+            disabled={loading || googleLoading}
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#eee5dc] px-6 py-3.5 text-sm font-semibold text-[#442719] transition hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span className="text-lg font-bold text-blue-600">G</span>
+            {googleLoading ? "Connecting to Google..." : "Continue with Google"}
+          </button>
 
           {/* Login Link */}
           <p className="mt-7 text-center text-sm text-[#806b5e]">
