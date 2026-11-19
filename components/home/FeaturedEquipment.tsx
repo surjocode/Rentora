@@ -1,13 +1,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Heart, Star, Package } from "lucide-react";
+import {
+  ArrowRight,
+  Heart,
+  Star,
+  Package,
+  MapPin,
+} from "lucide-react";
 
 export interface Equipment {
   _id: string;
   name: string;
+  description: string;
+  category: string;
   image: string;
   pricePerDay: number;
+  location: string;
+  ownerEmail: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt: string;
   rating?: number;
   reviewCount?: number;
 }
@@ -27,9 +40,11 @@ export default function FeaturedEquipment({
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="h-0.5 w-8 bg-orange-500" />
+
             <h2 className="text-2xl font-extrabold text-[#442719] sm:text-3xl">
               Featured Equipment
             </h2>
+
             <span className="h-0.5 w-8 bg-orange-500" />
           </div>
 
@@ -45,11 +60,13 @@ export default function FeaturedEquipment({
         {/* Equipment Grid */}
         {equipment.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
             {equipment.map((item) => (
               <article
                 key={item._id}
                 className="group overflow-hidden rounded-2xl border border-[#eee5dc] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
+
                 {/* Image */}
                 <div className="relative h-52 overflow-hidden bg-[#f2eee9]">
                   {item.image ? (
@@ -71,17 +88,33 @@ export default function FeaturedEquipment({
                   <button
                     type="button"
                     aria-label={`Add ${item.name} to favorites`}
-                    className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#442719] shadow-sm transition hover:text-red-500"
+                    disabled
+                    title="Favorites coming soon"
+                    className="absolute right-3 top-3 flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full bg-white/90 text-[#442719] shadow-sm opacity-70"
                   >
                     <Heart size={19} />
                   </button>
+
+                  {/* Category Badge */}
+                  <span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-bold text-[#442719] shadow-sm">
+                    {item.category}
+                  </span>
                 </div>
 
                 {/* Equipment Information */}
                 <div className="p-4">
+
                   <h3 className="truncate text-base font-bold text-[#442719]">
                     {item.name}
                   </h3>
+
+                  {/* Location */}
+                  <div className="mt-2 flex items-center gap-1.5 text-sm text-gray-500">
+                    <MapPin size={15} className="shrink-0" />
+                    <span className="truncate">
+                      {item.location}
+                    </span>
+                  </div>
 
                   {/* Rating */}
                   <div className="mt-2 flex items-center gap-1.5">
@@ -102,7 +135,7 @@ export default function FeaturedEquipment({
                   </div>
 
                   {/* Price */}
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between gap-2">
                     <p className="text-lg font-extrabold text-green-700">
                       ৳ {item.pricePerDay.toLocaleString("en-BD")}
                       <span className="text-xs font-medium text-gray-500">
@@ -112,7 +145,7 @@ export default function FeaturedEquipment({
 
                     <Link
                       href={`/equipment/${item._id}`}
-                      className="rounded-lg bg-[#442719] px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-700"
+                      className="shrink-0 rounded-lg bg-[#442719] px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-700"
                     >
                       View Details
                     </Link>
@@ -120,10 +153,14 @@ export default function FeaturedEquipment({
                 </div>
               </article>
             ))}
+
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#d9cfc5] bg-white px-5 py-12 text-center">
-            <Package className="mx-auto mb-3 text-orange-500" size={36} />
+            <Package
+              className="mx-auto mb-3 text-orange-500"
+              size={36}
+            />
 
             <h3 className="font-bold text-[#442719]">
               No Featured Equipment Yet

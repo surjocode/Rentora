@@ -42,11 +42,13 @@ export default function ReviewsSection({
         {/* Reviews Grid */}
         {reviews.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+
             {reviews.map((review) => (
               <article
                 key={review._id}
                 className="rounded-2xl border border-[#eee5dc] bg-[#faf7f2] p-6 transition duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg"
               >
+
                 {/* Quote Icon */}
                 <MessageSquareQuote
                   size={30}
@@ -73,7 +75,7 @@ export default function ReviewsSection({
 
                 {/* Review */}
                 <p className="mt-4 min-h-20 text-sm leading-7 text-gray-600">
-                  "{review.comment}"
+                  &quot;{review.comment}&quot;
                 </p>
 
                 {/* Equipment Name */}
@@ -86,6 +88,7 @@ export default function ReviewsSection({
                 {/* Customer Information */}
                 <div className="mt-6 flex items-center gap-3 border-t border-[#e7dcd0] pt-5">
                   <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+
                     {review.customerImage ? (
                       <Image
                         src={review.customerImage}
@@ -98,6 +101,7 @@ export default function ReviewsSection({
                     ) : (
                       review.customerName.charAt(0).toUpperCase()
                     )}
+
                   </div>
 
                   <div>
@@ -112,6 +116,7 @@ export default function ReviewsSection({
                 </div>
               </article>
             ))}
+
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#d9cfc5] bg-[#faf7f2] px-5 py-12 text-center">
@@ -129,6 +134,7 @@ export default function ReviewsSection({
             </p>
           </div>
         )}
+
       </div>
     </section>
   );
