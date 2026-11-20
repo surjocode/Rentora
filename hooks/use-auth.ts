@@ -27,6 +27,10 @@ export function useAuth() {
     loading: isPending,
     error,
     isAuthenticated: Boolean(session?.user),
+    role: user?.role,
+    isRenter: user?.role === "renter",
+    isOwner: user?.role === "owner",
+    isAdmin: user?.role === "admin",
     logout,
   };
 }
