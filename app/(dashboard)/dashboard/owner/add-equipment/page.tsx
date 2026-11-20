@@ -1,59 +1,212 @@
+"use client"
 
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   PackagePlus,
-  Upload,
   ImagePlus,
   ArrowLeft,
   Save,
   Info,
-} from "lucide-react";
+  X,
+  Loader2,
+} from "lucide-react"
+import {
+  addEquipment,
+  uploadEquipmentImage,
+  type CreateEquipmentData,
+} from "@/services/equipment.service"
+import Image from "next/image"
 
 export default function AddEquipmentPage() {
+  const router = useRouter()
+
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    brand: "",
+    rentalType: "daily" as "daily" | "weekly" | "monthly",
     pricePerDay: "",
+    availableQuantity: "1",
+    condition: "Good",
+    brand: "",
+    model: "",
     location: "",
     description: "",
-    condition: "Good",
-    availability: "Available",
-  });
+    termsAndConditions: "",
+  })
 
-  const [imageName, setImageName] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
+  // Generate image preview
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview("")
+      return
+    }
+
+    const previewUrl = URL.createObjectURL(imageFile)
+    setImagePreview(previewUrl)
+
+    return () => {
+      URL.revokeObjectURL(previewUrl)
+    }
+  }, [imageFile])
+
+  // Handle input changes
   const handleChange = (
-    event: React.ChangeEvent<
+    event: ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { name, value } = event.target;
+    const { name, value } = event.target
 
     setFormData((previous) => ({
       ...previous,
       [name]: value,
-    }));
-  };
+    }))
+  }
 
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
+  // Handle image selection
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
 
-    // Equipment creation API will be connected later.
-    alert("Equipment submission functionality will be available soon.");
-  };
+    if (!file) return
+
+    setError("")
+    setSuccess("")
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+
+    if (!allowedTypes.includes(file.type)) {
+      setError("Please select a JPG, PNG, WEBP or GIF image.")
+      event.target.value = ""
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image size cannot exceed 5 MB.")
+      event.target.value = ""
+      return
+    }
+
+    setImageFile(file)
+  }
+
+  // Reset form
+  const handleReset = () => {
+    setFormData({
+      name: "",
+      category: "",
+      rentalType: "daily",
+      pricePerDay: "",
+      availableQuantity: "1",
+      condition: "Good",
+      brand: "",
+      model: "",
+      location: "",
+      description: "",
+      termsAndConditions: "",
+    })
+
+    setImageFile(null)
+    setImagePreview("")
+    setError("")
+    setSuccess("")
+
+    const fileInput = document.getElementById(
+      "equipmentImage"
+    ) as HTMLInputElement | null
+
+    if (fileInput) {
+      fileInput.value = ""
+    }
+  }
+
+  // Submit equipment
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    setError("")
+    setSuccess("")
+
+    if (!imageFile) {
+      setError("Please select an equipment image.")
+      return
+    }
+
+    const price = Number(formData.pricePerDay)
+    const quantity = Number(formData.availableQuantity)
+
+    if (!Number.isFinite(price) || price <= 0) {
+      setError("Please enter a valid rental price.")
+      return
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setError("Available quantity must be at least 1.")
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      // Step 1: Upload image to ImgBB
+      const imageUrl = await uploadEquipmentImage(imageFile)
+
+      // Step 2: Prepare equipment data
+      const equipmentData: CreateEquipmentData = {
+        name: formData.name.trim(),
+        category: formData.category,
+        rentalType: formData.rentalType,
+        pricePerDay: price,
+        availableQuantity: quantity,
+        condition: formData.condition,
+        brand: formData.brand.trim(),
+        model: formData.model.trim(),
+        location: formData.location.trim(),
+        description: formData.description.trim(),
+        termsAndConditions: formData.termsAndConditions.trim(),
+        image: imageUrl,
+      }
+
+      // Step 3: Save equipment to MongoDB
+      const response = await addEquipment(equipmentData)
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to add equipment.")
+      }
+
+      setSuccess(
+        "Equipment submitted successfully! It is waiting for admin approval."
+      )
+
+      // Step 4: Redirect to My Equipment
+      setTimeout(() => {
+        router.push("/dashboard/owner/my-equipment")
+        router.refresh()
+      }, 1200)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       {/* Page Heading */}
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#ea580c]">
+          <p className="text-sm font-semibold tracking-wider text-[#ea580c] uppercase">
             Owner Dashboard
           </p>
 
@@ -85,9 +238,9 @@ export default function AddEquipmentPage() {
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-blue-800/80">
-            Provide accurate equipment details, clear images,
-            and a fair rental price. Your listing may require
-            admin approval before becoming publicly available.
+            Provide accurate equipment details, clear images, and a fair rental
+            price. Your listing will remain pending until an administrator
+            approves it.
           </p>
         </div>
       </section>
@@ -104,11 +257,29 @@ export default function AddEquipmentPage() {
               Equipment Information
             </h2>
 
-            <p className="text-sm text-[#9b8a7e]">
-              Fill in the details below.
-            </p>
+            <p className="text-sm text-[#9b8a7e]">Fill in the details below.</p>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div
+            role="alert"
+            className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <div
+            role="status"
+            className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          >
+            {success}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-5 sm:grid-cols-2">
@@ -126,10 +297,11 @@ export default function AddEquipmentPage() {
                 name="name"
                 type="text"
                 required
+                minLength={2}
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="e.g. Professional DSLR Camera"
-                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm transition outline-none focus:border-[#ea580c]"
               />
             </div>
 
@@ -148,7 +320,7 @@ export default function AddEquipmentPage() {
                 required
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm transition outline-none focus:border-[#ea580c]"
               >
                 <option value="">Select Category</option>
                 <option value="Construction">Construction</option>
@@ -168,18 +340,63 @@ export default function AddEquipmentPage() {
                 htmlFor="brand"
                 className="mb-2 block text-sm font-semibold text-[#442719]"
               >
-                Brand
+                Brand *
               </label>
 
               <input
                 id="brand"
                 name="brand"
                 type="text"
+                required
                 value={formData.brand}
                 onChange={handleChange}
-                placeholder="Enter equipment brand"
-                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                placeholder="e.g. Canon, Bosch, Samsung"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm transition outline-none focus:border-[#ea580c]"
               />
+            </div>
+
+            {/* Model */}
+            <div>
+              <label
+                htmlFor="model"
+                className="mb-2 block text-sm font-semibold text-[#442719]"
+              >
+                Model *
+              </label>
+
+              <input
+                id="model"
+                name="model"
+                type="text"
+                required
+                value={formData.model}
+                onChange={handleChange}
+                placeholder="Enter equipment model"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm transition outline-none focus:border-[#ea580c]"
+              />
+            </div>
+
+            {/* Rental Type */}
+            <div>
+              <label
+                htmlFor="rentalType"
+                className="mb-2 block text-sm font-semibold text-[#442719]"
+              >
+                Rental Type *
+              </label>
+
+              <select
+                id="rentalType"
+                name="rentalType"
+                required
+                value={formData.rentalType}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
             </div>
 
             {/* Price */}
@@ -200,12 +417,64 @@ export default function AddEquipmentPage() {
                 value={formData.pricePerDay}
                 onChange={handleChange}
                 placeholder="e.g. 1500"
-                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
+              />
+
+              <p className="mt-1 text-xs text-[#9b8a7e]">
+                Enter the daily base price. Rental calculation will use the
+                selected rental type.
+              </p>
+            </div>
+
+            {/* Available Quantity */}
+            <div>
+              <label
+                htmlFor="availableQuantity"
+                className="mb-2 block text-sm font-semibold text-[#442719]"
+              >
+                Available Quantity *
+              </label>
+
+              <input
+                id="availableQuantity"
+                name="availableQuantity"
+                type="number"
+                min="1"
+                step="1"
+                required
+                value={formData.availableQuantity}
+                onChange={handleChange}
+                placeholder="e.g. 5"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
               />
             </div>
 
-            {/* Location */}
+            {/* Condition */}
             <div>
+              <label
+                htmlFor="condition"
+                className="mb-2 block text-sm font-semibold text-[#442719]"
+              >
+                Equipment Condition *
+              </label>
+
+              <select
+                id="condition"
+                name="condition"
+                required
+                value={formData.condition}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
+              >
+                <option value="New">New</option>
+                <option value="Like New">Like New</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+              </select>
+            </div>
+
+            {/* Location */}
+            <div className="sm:col-span-2">
               <label
                 htmlFor="location"
                 className="mb-2 block text-sm font-semibold text-[#442719]"
@@ -221,52 +490,8 @@ export default function AddEquipmentPage() {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="City or area"
-                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
               />
-            </div>
-
-            {/* Condition */}
-            <div>
-              <label
-                htmlFor="condition"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
-                Equipment Condition
-              </label>
-
-              <select
-                id="condition"
-                name="condition"
-                value={formData.condition}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
-              >
-                <option value="New">New</option>
-                <option value="Like New">Like New</option>
-                <option value="Good">Good</option>
-                <option value="Fair">Fair</option>
-              </select>
-            </div>
-
-            {/* Availability */}
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="availability"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
-                Availability
-              </label>
-
-              <select
-                id="availability"
-                name="availability"
-                value={formData.availability}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-[#eee4da] bg-white px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
-              >
-                <option value="Available">Available</option>
-                <option value="Unavailable">Unavailable</option>
-              </select>
             </div>
 
             {/* Description */}
@@ -283,92 +508,145 @@ export default function AddEquipmentPage() {
                 name="description"
                 rows={5}
                 required
+                minLength={10}
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Describe your equipment, features, usage instructions, and rental conditions..."
-                className="w-full resize-y rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none transition focus:border-[#ea580c]"
+                className="w-full resize-y rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
+              />
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="termsAndConditions"
+                className="mb-2 block text-sm font-semibold text-[#442719]"
+              >
+                Terms and Conditions *
+              </label>
+
+              <textarea
+                id="termsAndConditions"
+                name="termsAndConditions"
+                rows={4}
+                required
+                minLength={5}
+                value={formData.termsAndConditions}
+                onChange={handleChange}
+                placeholder="Write rental rules, security deposit details, return policy, and other conditions..."
+                className="w-full resize-y rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
               />
             </div>
           </div>
 
           {/* Image Upload */}
           <div className="border-t border-[#eee4da] pt-6">
-            <h3 className="mb-2 font-bold text-[#442719]">
-              Equipment Image *
-            </h3>
+            <h3 className="mb-2 font-bold text-[#442719]">Equipment Image *</h3>
 
             <p className="mb-4 text-sm text-[#9b8a7e]">
-              Upload a clear image of your equipment.
+              Upload a clear image of your equipment. Maximum size: 5 MB.
             </p>
 
             <label
               htmlFor="equipmentImage"
               className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e5d8ca] bg-[#faf7f2] px-5 py-10 text-center transition hover:border-[#ea580c] hover:bg-orange-50"
             >
-              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#ea580c] shadow-sm">
-                <ImagePlus size={27} />
-              </div>
+              {imagePreview ? (
+                <div className="relative mb-4">
+                  <Image
+                    src={request.equipment.image}
+                    alt={request.equipment.name || "Equipment"}
+                    fill
+                    unoptimized
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#ea580c] shadow-sm">
+                  <ImagePlus size={27} />
+                </div>
+              )}
 
               <span className="font-semibold text-[#442719]">
-                Click to upload an image
+                {imageFile
+                  ? "Change selected image"
+                  : "Click to upload an image"}
               </span>
 
               <span className="mt-2 text-xs text-[#9b8a7e]">
-                PNG, JPG or WEBP
+                PNG, JPG, WEBP or GIF
               </span>
 
-              {imageName && (
+              {imageFile && (
                 <span className="mt-3 text-sm font-medium text-green-700">
-                  Selected: {imageName}
+                  Selected: {imageFile.name}
                 </span>
               )}
 
               <input
                 id="equipmentImage"
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
-                required
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                required={!imageFile}
+                disabled={loading}
                 className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  setImageName(file?.name ?? "");
-                }}
+                onChange={handleImageChange}
               />
             </label>
+
+            {imageFile && (
+              <button
+                type="button"
+                onClick={() => {
+                  setImageFile(null)
+
+                  const input = document.getElementById(
+                    "equipmentImage"
+                  ) as HTMLInputElement | null
+
+                  if (input) input.value = ""
+                }}
+                disabled={loading}
+                className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                <X size={16} />
+                Remove Image
+              </button>
+            )}
           </div>
 
-          {/* Submit */}
+          {/* Submit Buttons */}
           <div className="flex flex-col-reverse justify-end gap-3 border-t border-[#eee4da] pt-6 sm:flex-row">
             <button
-              type="reset"
-              onClick={() => {
-                setFormData({
-                  name: "",
-                  category: "",
-                  brand: "",
-                  pricePerDay: "",
-                  location: "",
-                  description: "",
-                  condition: "Good",
-                  availability: "Available",
-                });
-                setImageName("");
-              }}
-              className="rounded-xl border border-[#eee4da] px-6 py-3 text-sm font-semibold text-[#6b5a50] transition hover:bg-[#faf7f2]"
+              type="button"
+              onClick={handleReset}
+              disabled={loading}
+              className="rounded-xl border border-[#eee4da] px-6 py-3 text-sm font-semibold text-[#6b5a50] transition hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reset Form
             </button>
 
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ea580c] px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ea580c] px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Save size={18} />
-              Submit Equipment
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Uploading & Submitting...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Submit Equipment
+                </>
+              )}
             </button>
           </div>
         </form>
       </section>
     </div>
-  );
+  )
 }
