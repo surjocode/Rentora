@@ -2,13 +2,28 @@
 import { authClient } from "@/lib/auth-client";
 
 export async function getAuthToken(): Promise<string> {
-  const { data, error } = await authClient.token();
+  try {
+    const { data, error } = await authClient.token();
 
-  if (error || !data?.token) {
-    throw new Error(
-      error?.message || "Failed to get authentication token"
+    if (error) {
+      throw new Error(error.message || "Failed to get authentication token");
+    }
+
+    if (!data?.token) {
+      throw new Error(
+        "Authentication token not found. Please login again."
+      );
+    }
+
+    return data.token;
+  } catch (error) {
+    console.error(
+      "JWT token error:",
+      error instanceof Error ? error.message : "Unknown error"
     );
-  }
 
-  return data.token;
+    throw error instanceof Error
+      ? error
+      : new Error("Failed to get authentication token");
+  }
 }

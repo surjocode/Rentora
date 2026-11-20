@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Wrench,
@@ -23,12 +24,30 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href.startsWith("/#")) return false;
+
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const linkClass = (href: string) =>
+    `relative whitespace-nowrap text-sm font-semibold transition-colors ${
+      isActive(href)
+        ? "text-orange-600"
+        : "text-[#493b32] hover:text-orange-600"
+    }`;
+
+  const actionClass =
+    "flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[#eee5dc] bg-[#faf7f2]">
+    <header className="sticky top-0 z-50 border-b border-[#eee5dc] bg-[#faf7f2]/95 shadow-sm backdrop-blur-md">
       <nav className="mx-auto flex min-h-[68px] max-w-[1440px] items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
@@ -48,17 +67,17 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-5 lg:flex xl:gap-7">
-          {navLinks.map((link, index) => (
+          {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className={`relative whitespace-nowrap text-[13px] font-semibold transition-colors ${
-                index === 0
-                  ? "text-orange-600 after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-full after:bg-orange-600"
-                  : "text-[#493b32] hover:text-orange-600"
-              }`}
+              className={linkClass(link.href)}
+              onClick={closeMenu}
             >
               {link.name}
+              {isActive(link.href) && (
+                <span className="absolute -bottom-2 left-0 h-0.5 w-full rounded-full bg-orange-600" />
+              )}
             </Link>
           ))}
         </div>
@@ -66,25 +85,22 @@ export default function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
 
-          {/* Demo Admin */}
           <Link
             href="/login?demo=admin"
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-purple-200 bg-purple-50 px-2.5 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
+            className={`${actionClass} border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100`}
           >
-            <ShieldCheck size={14} />
+            <ShieldCheck size={15} />
             Demo Admin
           </Link>
 
-          {/* Demo Owner */}
           <Link
             href="/login?demo=owner"
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+            className={`${actionClass} border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100`}
           >
-            <BriefcaseBusiness size={14} />
+            <BriefcaseBusiness size={15} />
             Demo Owner
           </Link>
 
-          {/* Search */}
           <Link
             href="/all-equipment"
             aria-label="Search equipment"
@@ -93,21 +109,19 @@ export default function Navbar() {
             <Search size={19} />
           </Link>
 
-          {/* Login */}
           <Link
             href="/login"
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-[#d9cfc5] bg-white px-3 py-2 text-xs font-semibold text-[#493b32] transition hover:border-orange-400 hover:text-orange-600"
+            className={`${actionClass} border border-[#d9cfc5] bg-white text-[#493b32] hover:border-orange-400 hover:text-orange-600`}
           >
-            <LogIn size={14} />
+            <LogIn size={15} />
             Login
           </Link>
 
-          {/* Register */}
           <Link
             href="/register"
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#442719] px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-700"
+            className={`${actionClass} bg-[#442719] text-white hover:bg-orange-700`}
           >
-            <UserPlus size={14} />
+            <UserPlus size={15} />
             Register
           </Link>
         </div>
@@ -126,14 +140,19 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="border-t border-[#eee5dc] bg-[#faf7f2] px-5 py-5 xl:hidden">
+        <div className="border-t border-[#eee5dc] bg-[#faf7f2] px-5 py-5 shadow-lg xl:hidden">
           <div className="flex flex-col gap-4">
+
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
                 onClick={closeMenu}
-                className="text-sm font-semibold text-[#493b32] transition hover:text-orange-600"
+                className={`text-sm font-semibold transition ${
+                  isActive(link.href)
+                    ? "text-orange-600"
+                    : "text-[#493b32] hover:text-orange-600"
+                }`}
               >
                 {link.name}
               </Link>
@@ -143,7 +162,7 @@ export default function Navbar() {
               <Link
                 href="/login?demo=admin"
                 onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2.5 text-xs font-semibold text-purple-700"
+                className={`${actionClass} border border-purple-200 bg-purple-50 text-purple-700`}
               >
                 <ShieldCheck size={15} />
                 Demo Admin
@@ -152,7 +171,7 @@ export default function Navbar() {
               <Link
                 href="/login?demo=owner"
                 onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-semibold text-amber-700"
+                className={`${actionClass} border border-amber-200 bg-amber-50 text-amber-700`}
               >
                 <BriefcaseBusiness size={15} />
                 Demo Owner
@@ -163,7 +182,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-lg border border-[#d9cfc5] bg-white px-3 py-2.5 text-sm font-semibold text-[#493b32]"
+                className={`${actionClass} border border-[#d9cfc5] bg-white text-[#493b32]`}
               >
                 <LogIn size={15} />
                 Login
@@ -172,7 +191,7 @@ export default function Navbar() {
               <Link
                 href="/register"
                 onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-lg bg-[#442719] px-3 py-2.5 text-sm font-semibold text-white"
+                className={`${actionClass} bg-[#442719] text-white`}
               >
                 <UserPlus size={15} />
                 Register

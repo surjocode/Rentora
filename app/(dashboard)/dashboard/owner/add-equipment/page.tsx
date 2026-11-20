@@ -552,13 +552,12 @@ export default function AddEquipmentPage() {
               className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#e5d8ca] bg-[#faf7f2] px-5 py-10 text-center transition hover:border-[#ea580c] hover:bg-orange-50"
             >
               {imagePreview ? (
-                <div className="relative mb-4">
+                <div className="relative mb-4 h-40 w-full overflow-hidden rounded-xl">
                   <Image
-                    src={request.equipment.image}
-                    alt={request.equipment.name || "Equipment"}
+                    src={imagePreview}
+                    alt="Equipment preview"
                     fill
                     unoptimized
-                    sizes="56px"
                     className="object-cover"
                   />
                 </div>

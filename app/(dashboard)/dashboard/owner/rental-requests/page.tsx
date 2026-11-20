@@ -1,9 +1,8 @@
+"use client"
 
-"use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import {
   ClipboardList,
   Search,
@@ -17,205 +16,193 @@ import {
   Loader2,
   RefreshCw,
   Package,
-} from "lucide-react";
+} from "lucide-react"
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth"
 import {
   getOwnerRentalRequests,
   updateRentalStatus,
   type Rental,
-} from "@/services/rental.service";
+} from "@/services/rental.service"
 
 interface RentalEquipment {
-  _id: string;
-  name: string;
-  image: string;
-  category: string;
-  location: string;
-  pricePerDay: number;
+  _id: string
+  name: string
+  image: string
+  category: string
+  location: string
+  pricePerDay: number
 }
 
 interface RentalRequest extends Rental {
-  equipment?: RentalEquipment;
+  equipment?: RentalEquipment
 }
 
-type StatusFilter = "all" | "pending" | "approved" | "rejected";
+type StatusFilter = "all" | "pending" | "approved" | "rejected"
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleDateString("en-BD", {
     day: "numeric",
     month: "short",
     year: "numeric",
-  });
+  })
 
 const formatPrice = (price: number) =>
-  new Intl.NumberFormat("en-BD").format(price);
+  new Intl.NumberFormat("en-BD").format(price)
 
 export default function RentalRequestsPage() {
-  const { loading: authLoading, isAuthenticated, isOwner } = useAuth();
+  const { loading: authLoading, isAuthenticated, isOwner } = useAuth()
 
-  const [requests, setRequests] = useState<RentalRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [requests, setRequests] = useState<RentalRequest[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] =
-    useState<StatusFilter>("all");
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const fetchRequests = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      const result = await getOwnerRentalRequests();
+      const result = await getOwnerRentalRequests()
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
-      setRequests(result.data);
+      setRequests(result.data)
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
           : "Failed to load rental requests"
-      );
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) return
 
     if (!isAuthenticated || !isOwner) {
-      setLoading(false);
-      return;
+      setLoading(false)
+      return
     }
 
-    void fetchRequests();
-  }, [authLoading, isAuthenticated, isOwner, fetchRequests]);
+    void fetchRequests()
+  }, [authLoading, isAuthenticated, isOwner, fetchRequests])
 
   const filteredRequests = useMemo(() => {
     return requests.filter((request) => {
-      const equipmentName = request.equipment?.name ?? "";
-      const customerEmail = request.renterEmail ?? "";
-      const location = request.equipment?.location ?? "";
+      const equipmentName = request.equipment?.name ?? ""
+      const customerEmail = request.renterEmail ?? ""
+      const location = request.equipment?.location ?? ""
 
-      const searchMatch = [
-        equipmentName,
-        customerEmail,
-        location,
-      ].some((value) =>
-        value.toLowerCase().includes(search.trim().toLowerCase())
-      );
+      const searchMatch = [equipmentName, customerEmail, location].some(
+        (value) => value.toLowerCase().includes(search.trim().toLowerCase())
+      )
 
       const statusMatch =
-        statusFilter === "all" || request.status === statusFilter;
+        statusFilter === "all" || request.status === statusFilter
 
-      return searchMatch && statusMatch;
-    });
-  }, [requests, search, statusFilter]);
+      return searchMatch && statusMatch
+    })
+  }, [requests, search, statusFilter])
 
   const pendingCount = requests.filter(
     (request) => request.status === "pending"
-  ).length;
+  ).length
 
   const approvedCount = requests.filter(
     (request) => request.status === "approved"
-  ).length;
+  ).length
 
   const rejectedCount = requests.filter(
     (request) => request.status === "rejected"
-  ).length;
+  ).length
 
   const handleUpdateStatus = async (
     rentalId: string,
     status: "approved" | "rejected"
   ) => {
-    const action = status === "approved" ? "approve" : "reject";
+    const action = status === "approved" ? "approve" : "reject"
 
     const confirmed = window.confirm(
       `Are you sure you want to ${action} this rental request?`
-    );
+    )
 
-    if (!confirmed) return;
+    if (!confirmed) return
 
     try {
-      setUpdatingId(rentalId);
-      setError(null);
+      setUpdatingId(rentalId)
+      setError(null)
 
-      const result = await updateRentalStatus(rentalId, status);
+      const result = await updateRentalStatus(rentalId, status)
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
       setRequests((previousRequests) =>
         previousRequests.map((request) =>
-          request._id === rentalId
-            ? { ...request, status }
-            : request
+          request._id === rentalId ? { ...request, status } : request
         )
-      );
+      )
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
           : `Failed to ${action} rental request`
-      );
+      )
     } finally {
-      setUpdatingId(null);
+      setUpdatingId(null)
     }
-  };
+  }
 
   const getStatusStyle = (status: Rental["status"]) => {
     switch (status) {
       case "pending":
-        return "bg-orange-50 text-orange-600";
+        return "bg-orange-50 text-orange-600"
       case "approved":
-        return "bg-green-50 text-green-600";
+        return "bg-green-50 text-green-600"
       case "rejected":
-        return "bg-red-50 text-red-600";
+        return "bg-red-50 text-red-600"
       case "cancelled":
-        return "bg-gray-100 text-gray-600";
+        return "bg-gray-100 text-gray-600"
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-gray-100 text-gray-600"
     }
-  };
+  }
 
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2
-            size={36}
-            className="mx-auto animate-spin text-[#ea580c]"
-          />
+          <Loader2 size={36} className="mx-auto animate-spin text-[#ea580c]" />
           <p className="mt-3 text-sm text-[#9b8a7e]">
             Loading rental requests...
           </p>
         </div>
       </div>
-    );
+    )
   }
 
   if (!isAuthenticated || !isOwner) {
     return (
       <div className="rounded-2xl border border-[#eee4da] bg-white px-5 py-16 text-center">
-        <ClipboardList
-          size={42}
-          className="mx-auto text-[#ea580c]"
-        />
+        <ClipboardList size={42} className="mx-auto text-[#ea580c]" />
 
         <h2 className="mt-4 text-xl font-bold text-[#442719]">
           Owner Access Required
         </h2>
 
         <p className="mt-2 text-sm text-[#9b8a7e]">
-          Please sign in with an equipment owner account to manage rental requests.
+          Please sign in with an equipment owner account to manage rental
+          requests.
         </p>
 
         <Link
@@ -225,14 +212,14 @@ export default function RentalRequestsPage() {
           Login
         </Link>
       </div>
-    );
+    )
   }
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Page Heading */}
       <section>
-        <p className="text-sm font-semibold uppercase tracking-wider text-[#ea580c]">
+        <p className="text-sm font-semibold tracking-wider text-[#ea580c] uppercase">
           Owner Dashboard
         </p>
 
@@ -273,7 +260,7 @@ export default function RentalRequestsPage() {
             color: "text-red-600 bg-red-50",
           },
         ].map((item) => {
-          const Icon = item.icon;
+          const Icon = item.icon
 
           return (
             <div
@@ -281,9 +268,7 @@ export default function RentalRequestsPage() {
               className="rounded-2xl border border-[#eee4da] bg-white p-5"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm text-[#9b8a7e]">
-                  {item.title}
-                </p>
+                <p className="text-sm text-[#9b8a7e]">{item.title}</p>
 
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.color}`}
@@ -296,16 +281,14 @@ export default function RentalRequestsPage() {
                 {item.value}
               </h2>
             </div>
-          );
+          )
         })}
       </section>
 
       {/* Search and Filter */}
       <section className="flex flex-col gap-4 rounded-2xl border border-[#eee4da] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-bold text-[#442719]">
-            All Booking Requests
-          </h2>
+          <h2 className="font-bold text-[#442719]">All Booking Requests</h2>
 
           <p className="mt-1 text-sm text-[#9b8a7e]">
             Check customer requests and booking details.
@@ -407,7 +390,7 @@ export default function RentalRequestsPage() {
               </div>
 
               <div className="mt-5 space-y-3 border-t border-[#eee4da] pt-4">
-                <p className="flex items-center gap-2 break-all text-sm text-[#6b5a50]">
+                <p className="flex items-center gap-2 text-sm break-all text-[#6b5a50]">
                   <UserRound size={17} className="shrink-0" />
                   {request.renterEmail}
                 </p>
@@ -419,7 +402,8 @@ export default function RentalRequestsPage() {
 
                 <p className="flex items-center gap-2 text-sm text-[#6b5a50]">
                   <CalendarDays size={17} className="shrink-0" />
-                  {formatDate(request.startDate)} – {formatDate(request.endDate)}
+                  {formatDate(request.startDate)} –{" "}
+                  {formatDate(request.endDate)}
                 </p>
 
                 <p className="text-sm text-[#6b5a50]">
@@ -432,16 +416,14 @@ export default function RentalRequestsPage() {
 
               <div className="mt-5 flex items-center justify-between border-t border-[#eee4da] pt-4">
                 <div>
-                  <p className="text-xs text-[#9b8a7e]">
-                    Total Rental Price
-                  </p>
+                  <p className="text-xs text-[#9b8a7e]">Total Rental Price</p>
 
                   <p className="mt-1 text-lg font-bold text-[#442719]">
                     ৳{formatPrice(request.totalPrice)}
                   </p>
                 </div>
 
-                <span className="rounded-full bg-[#faf7f2] px-3 py-1.5 text-xs font-medium capitalize text-[#6b5a50]">
+                <span className="rounded-full bg-[#faf7f2] px-3 py-1.5 text-xs font-medium text-[#6b5a50] capitalize">
                   Payment: {request.paymentStatus}
                 </span>
               </div>
@@ -505,8 +487,8 @@ export default function RentalRequestsPage() {
           {requests.length > 0 && (
             <button
               onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
+                setSearch("")
+                setStatusFilter("all")
               }}
               className="mt-6 rounded-xl bg-[#faf0e8] px-6 py-3 text-sm font-semibold text-[#ea580c]"
             >
@@ -516,5 +498,5 @@ export default function RentalRequestsPage() {
         </section>
       )}
     </div>
-  );
+  )
 }
