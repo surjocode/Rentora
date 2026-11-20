@@ -5,9 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getAllEquipment,
   type Equipment,
+  type EquipmentFilters,
 } from "@/services/equipment.service";
 
-export function useEquipment() {
+export function useEquipment(filters: EquipmentFilters = {}) {
+  const search = filters.search ?? "";
+  const category = filters.category ?? "";
+  const sort = filters.sort ?? "newest";
+
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +22,11 @@ export function useEquipment() {
       setLoading(true);
       setError(null);
 
-      const result = await getAllEquipment();
+      const result = await getAllEquipment({
+        search,
+        category,
+        sort,
+      });
 
       if (!result.success) {
         throw new Error(result.message);
@@ -33,7 +42,7 @@ export function useEquipment() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, category, sort]);
 
   useEffect(() => {
     void fetchEquipment();

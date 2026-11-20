@@ -15,17 +15,43 @@ export interface Equipment {
   updatedAt: string;
 }
 
+export interface EquipmentFilters {
+  search?: string;
+  category?: string;
+  sort?: "newest" | "oldest" | "price-asc" | "price-desc";
+}
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-// Get all approved equipment
-export const getAllEquipment = async (): Promise<
-  ApiResponse<Equipment[]>
-> => {
-  return apiRequest<ApiResponse<Equipment[]>>("/api/equipment");
+// Get all approved equipment with search, filter and sort
+export const getAllEquipment = async (
+  filters: EquipmentFilters = {}
+): Promise<ApiResponse<Equipment[]>> => {
+  const params = new URLSearchParams();
+
+  if (filters.search) {
+    params.set("search", filters.search);
+  }
+
+  if (filters.category) {
+    params.set("category", filters.category);
+  }
+
+  if (filters.sort) {
+    params.set("sort", filters.sort);
+  }
+
+  const queryString = params.toString();
+
+  const endpoint = queryString
+    ? `/api/equipment?${queryString}`
+    : "/api/equipment";
+
+  return apiRequest<ApiResponse<Equipment[]>>(endpoint);
 };
 
 // Get single equipment by ID

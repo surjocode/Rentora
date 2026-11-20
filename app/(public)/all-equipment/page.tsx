@@ -1,7 +1,9 @@
-"use client"
 
-import { useMemo, useState } from "react"
-import Link from "next/link"
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import {
   Search,
   SlidersHorizontal,
@@ -9,75 +11,55 @@ import {
   Package,
   MapPin,
   RefreshCw,
-} from "lucide-react"
+} from "lucide-react";
 
-import { useEquipment } from "@/hooks/use-equipment"
-import { useCategories } from "@/hooks/use-categories"
-import type { Equipment } from "@/services/equipment.service"
-import Image from "next/image"
+import { useEquipment } from "@/hooks/use-equipment";
+import { useCategories } from "@/hooks/use-categories";
+import type {
+  Equipment,
+  EquipmentFilters,
+} from "@/services/equipment.service";
 
 export default function AllEquipmentPage() {
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [sort, setSort] =
+    useState<EquipmentFilters["sort"]>("newest");
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch equipment from backend
   const {
     equipment,
     loading: equipmentLoading,
     error: equipmentError,
     refetch,
-  } = useEquipment()
+  } = useEquipment({
+    search: debouncedSearch,
+    category: selectedCategory,
+    sort,
+  });
 
-  const { categories, loading: categoriesLoading } = useCategories()
+  // Fetch categories from backend
+  const {
+    categories,
+    loading: categoriesLoading,
+  } = useCategories();
 
-  const [search, setSearch] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("")
-  const [sort, setSort] = useState("newest")
-
-  const filteredEquipment = useMemo(() => {
-    let result: Equipment[] = [...equipment]
-
-    // Search by equipment name, category and location
-    if (search.trim()) {
-      const searchTerm = search.toLowerCase().trim()
-
-      result = result.filter(
-        (item) =>
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.category.toLowerCase().includes(searchTerm) ||
-          item.location.toLowerCase().includes(searchTerm)
-      )
-    }
-
-    // Category filter
-    if (selectedCategory) {
-      result = result.filter((item) => item.category === selectedCategory)
-    }
-
-    // Sorting
-    switch (sort) {
-      case "price-asc":
-        result.sort((a, b) => a.pricePerDay - b.pricePerDay)
-        break
-
-      case "price-desc":
-        result.sort((a, b) => b.pricePerDay - a.pricePerDay)
-        break
-
-      case "oldest":
-        result.sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-        break
-
-      case "newest":
-      default:
-        result.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        break
-    }
-
-    return result
-  }, [equipment, search, selectedCategory, sort])
+  const clearFilters = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    setSelectedCategory("");
+    setSort("newest");
+  };
 
   return (
     <main className="min-h-screen bg-[#faf7f2] px-5 py-12 sm:px-6 lg:px-8">
@@ -126,7 +108,9 @@ export default function AllEquipmentPage() {
 
               <select
                 value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value)}
+                onChange={(event) =>
+                  setSelectedCategory(event.target.value)
+                }
                 disabled={categoriesLoading}
                 className="w-full appearance-none rounded-xl border border-[#eee5dc] bg-white px-4 py-3 pl-11 text-sm text-[#665348] outline-none focus:border-orange-500"
               >
@@ -149,7 +133,11 @@ export default function AllEquipmentPage() {
 
               <select
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onChange={(event) =>
+                  setSort(
+                    event.target.value as EquipmentFilters["sort"]
+                  )
+                }
                 className="w-full appearance-none rounded-xl border border-[#eee5dc] bg-white px-4 py-3 pl-11 text-sm text-[#665348] outline-none focus:border-orange-500"
               >
                 <option value="newest">Newest First</option>
@@ -168,7 +156,7 @@ export default function AllEquipmentPage() {
           </h2>
 
           <p className="text-sm text-[#806b5e]">
-            {filteredEquipment.length} equipment found
+            {equipment.length} equipment found
           </p>
         </div>
 
@@ -180,6 +168,7 @@ export default function AllEquipmentPage() {
                 size={32}
                 className="mx-auto animate-spin text-orange-600"
               />
+
               <p className="mt-4 text-sm text-[#806b5e]">
                 Loading equipment...
               </p>
@@ -190,7 +179,9 @@ export default function AllEquipmentPage() {
         {/* Error */}
         {!equipmentLoading && equipmentError && (
           <div className="rounded-2xl border border-red-200 bg-white px-5 py-12 text-center">
-            <p className="font-semibold text-red-600">{equipmentError}</p>
+            <p className="font-semibold text-red-600">
+              {equipmentError}
+            </p>
 
             <button
               onClick={() => void refetch()}
@@ -204,10 +195,13 @@ export default function AllEquipmentPage() {
         {/* Equipment Grid */}
         {!equipmentLoading &&
           !equipmentError &&
-          filteredEquipment.length > 0 && (
+          equipment.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredEquipment.map((item) => (
-                <EquipmentCard key={item._id} equipment={item} />
+              {equipment.map((item) => (
+                <EquipmentCard
+                  key={item._id}
+                  equipment={item}
+                />
               ))}
             </div>
           )}
@@ -215,7 +209,7 @@ export default function AllEquipmentPage() {
         {/* Empty State */}
         {!equipmentLoading &&
           !equipmentError &&
-          filteredEquipment.length === 0 && (
+          equipment.length === 0 && (
             <div className="rounded-2xl border border-dashed border-[#dfd0c2] bg-white px-5 py-16 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                 <Package size={32} />
@@ -226,16 +220,12 @@ export default function AllEquipmentPage() {
               </h2>
 
               <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#806b5e]">
-                We could not find any equipment matching your search. Try
-                changing your search or category filter.
+                We could not find any equipment matching your search.
+                Try changing your search or category filter.
               </p>
 
               <button
-                onClick={() => {
-                  setSearch("")
-                  setSelectedCategory("")
-                  setSort("newest")
-                }}
+                onClick={clearFilters}
                 className="mt-6 rounded-xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
               >
                 Clear Filters
@@ -244,21 +234,30 @@ export default function AllEquipmentPage() {
           )}
       </div>
     </main>
-  )
+  );
 }
 
-function EquipmentCard({ equipment }: { equipment: Equipment }) {
+// Equipment Card
+function EquipmentCard({
+  equipment,
+}: {
+  equipment: Equipment;
+}) {
   return (
     <article className="overflow-hidden rounded-2xl border border-[#eee5dc] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <Link href={`/equipment/${equipment._id}`} className="block">
-        <div className="h-56 overflow-hidden bg-[#f3eee8]">
+      <Link
+        href={`/equipment/${equipment._id}`}
+        className="block"
+      >
+        <div className="relative h-56 overflow-hidden bg-[#f3eee8]">
           {equipment.image ? (
             <Image
               src={equipment.image}
               alt={equipment.name}
-              width={600}
-              height={400}
-              className="h-full w-full object-cover transition duration-500 hover:scale-105"
+              fill
+              unoptimized
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition duration-500 hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-[#9a877a]">
@@ -284,7 +283,9 @@ function EquipmentCard({ equipment }: { equipment: Equipment }) {
           <div className="mt-5 flex items-center justify-between border-t border-[#eee5dc] pt-4">
             <p className="text-lg font-bold text-orange-600">
               ৳{equipment.pricePerDay}
-              <span className="text-xs font-normal text-[#806b5e]"> / day</span>
+              <span className="text-xs font-normal text-[#806b5e]">
+                {" "}/ day
+              </span>
             </p>
 
             <span className="rounded-lg bg-[#442719] px-4 py-2 text-xs font-semibold text-white">
@@ -294,5 +295,5 @@ function EquipmentCard({ equipment }: { equipment: Equipment }) {
         </div>
       </Link>
     </article>
-  )
+  );
 }
