@@ -20,9 +20,8 @@ export interface Rental {
   totalDays: number;
   quantity: number;
   totalPrice: number;
-  paymentStatus: "unpaid" | "paid";
-  stripePaymentIntentId?: string;
-  expiresAt?: string;
+  paymentStatus: "paid";
+  stripePaymentIntentId: string;
   createdAt: string;
   updatedAt: string;
   equipment?: RentalEquipment;
@@ -34,23 +33,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// Create rental booking
-export const createRental = async (
-  rental: {
-    equipmentId: string;
-    startDate: string;
-    endDate: string;
-    quantity: number;
-  }
-): Promise<ApiResponse<Rental>> => {
-  return apiRequest<ApiResponse<Rental>>("/api/rentals", {
-    method: "POST",
-    requiresAuth: true,
-    body: JSON.stringify(rental),
-  });
-};
-
-// Get logged-in customer's rentals
+// Get logged-in customer's paid rentals
 export const getMyRentals = async (): Promise<
   ApiResponse<Rental[]>
 > => {
@@ -66,7 +49,7 @@ export const getOwnerBookings = async (): Promise<
   return apiRequest<ApiResponse<Rental[]>>("/api/rentals/owner", {
     requiresAuth: true,
   });
-};
+}
 
 // Stripe PaymentIntent response
 export interface PaymentIntentResponse {
@@ -75,16 +58,24 @@ export interface PaymentIntentResponse {
   clientSecret?: string | null;
 }
 
-// Create Stripe PaymentIntent
+// Payment request information
+export interface PaymentRequest {
+  equipmentId: string;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+}
+
+// Create Stripe PaymentIntent before creating a booking
 export const createPaymentIntent = async (
-  rentalId: string
+  booking: PaymentRequest
 ): Promise<PaymentIntentResponse> => {
   return apiRequest<PaymentIntentResponse>(
     "/api/payments/create-payment-intent",
     {
       method: "POST",
       requiresAuth: true,
-      body: JSON.stringify({ rentalId }),
+      body: JSON.stringify(booking),
     }
   );
 };

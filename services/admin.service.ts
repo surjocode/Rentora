@@ -14,9 +14,7 @@ export interface AdminStats {
 }
 
 // Get all users
-export const getAllUsers = async (): Promise<
-  ApiResponse<User[]>
-> => {
+export const getAllUsers = async (): Promise<ApiResponse<User[]>> => {
   return apiRequest<ApiResponse<User[]>>("/api/admin/users", {
     requiresAuth: true,
   });
@@ -37,6 +35,18 @@ export const updateUserRole = async (
   );
 };
 
+// Get all equipment for admin
+export const getAllAdminEquipment = async (): Promise<
+  ApiResponse<Equipment[]>
+> => {
+  return apiRequest<ApiResponse<Equipment[]>>(
+    "/api/admin/equipment",
+    {
+      requiresAuth: true,
+    }
+  );
+};
+
 // Approve or reject equipment
 export const updateEquipmentStatus = async (
   id: string,
@@ -48,6 +58,34 @@ export const updateEquipmentStatus = async (
       method: "PATCH",
       requiresAuth: true,
       body: JSON.stringify({ status }),
+    }
+  );
+};
+
+// Update equipment by admin
+export const updateAdminEquipment = async (
+  id: string,
+  equipmentData: Partial<Equipment>
+): Promise<ApiResponse<Equipment>> => {
+  return apiRequest<ApiResponse<Equipment>>(
+    `/api/admin/equipment/${id}`,
+    {
+      method: "PATCH",
+      requiresAuth: true,
+      body: JSON.stringify(equipmentData),
+    }
+  );
+};
+
+// Delete equipment by admin
+export const deleteAdminEquipment = async (
+  id: string
+): Promise<ApiResponse<null>> => {
+  return apiRequest<ApiResponse<null>>(
+    `/api/admin/equipment/${id}`,
+    {
+      method: "DELETE",
+      requiresAuth: true,
     }
   );
 };

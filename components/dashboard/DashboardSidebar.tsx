@@ -32,6 +32,7 @@ interface DashboardLink {
   icon: LucideIcon;
 }
 
+// Customer Sidebar
 const customerLinks: DashboardLink[] = [
   {
     name: "Overview",
@@ -55,6 +56,7 @@ const customerLinks: DashboardLink[] = [
   },
 ];
 
+// Owner Sidebar
 const ownerLinks: DashboardLink[] = [
   {
     name: "Add Equipment",
@@ -73,6 +75,7 @@ const ownerLinks: DashboardLink[] = [
   },
 ];
 
+// Admin Sidebar
 const adminLinks: DashboardLink[] = [
   {
     name: "Manage Users",
@@ -208,18 +211,20 @@ export default function DashboardSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
-          {/* General */}
-          <div>
-            <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
-              General
-            </p>
+          {/* Customer Sidebar */}
+          {role === "renter" && (
+            <div>
+              <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
+                Customer Panel
+              </p>
 
-            <div className="space-y-1">
-              {renderLinks(customerLinks)}
+              <div className="space-y-1">
+                {renderLinks(customerLinks)}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Owner Panel */}
+          {/* Owner Sidebar */}
           {role === "owner" && (
             <div>
               <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
@@ -232,7 +237,7 @@ export default function DashboardSidebar({
             </div>
           )}
 
-          {/* Admin Panel */}
+          {/* Admin Sidebar */}
           {role === "admin" && (
             <div>
               <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
