@@ -1,4 +1,6 @@
 
+"use client";
+
 import Link from "next/link";
 import {
   Package,
@@ -9,9 +11,30 @@ import {
   PlusCircle,
   ClipboardList,
   UserRound,
+  Users,
+  Settings,
+  Wallet,
+  ShieldCheck,
 } from "lucide-react";
 
-const stats = [
+import { authClient } from "@/lib/auth-client";
+
+interface DashboardStat {
+  title: string;
+  value: string;
+  description: string;
+  icon: React.ElementType;
+  color: string;
+}
+
+interface DashboardAction {
+  title: string;
+  description: string;
+  href: string;
+  icon: React.ElementType;
+}
+
+const customerStats: DashboardStat[] = [
   {
     title: "Total Rentals",
     value: "0",
@@ -42,7 +65,69 @@ const stats = [
   },
 ];
 
-const quickActions = [
+const ownerStats: DashboardStat[] = [
+  {
+    title: "My Equipment",
+    value: "0",
+    description: "Total listed equipment",
+    icon: Package,
+    color: "bg-blue-50 text-blue-600",
+  },
+  {
+    title: "Pending Requests",
+    value: "0",
+    description: "Requests awaiting approval",
+    icon: Clock,
+    color: "bg-orange-50 text-orange-600",
+  },
+  {
+    title: "Active Rentals",
+    value: "0",
+    description: "Currently rented items",
+    icon: CalendarCheck,
+    color: "bg-green-50 text-green-600",
+  },
+  {
+    title: "Total Earnings",
+    value: "৳0",
+    description: "Your rental earnings",
+    icon: Wallet,
+    color: "bg-purple-50 text-purple-600",
+  },
+];
+
+const adminStats: DashboardStat[] = [
+  {
+    title: "Total Users",
+    value: "0",
+    description: "Registered platform users",
+    icon: Users,
+    color: "bg-blue-50 text-blue-600",
+  },
+  {
+    title: "Pending Equipment",
+    value: "0",
+    description: "Waiting for approval",
+    icon: Clock,
+    color: "bg-orange-50 text-orange-600",
+  },
+  {
+    title: "Total Rentals",
+    value: "0",
+    description: "Platform rental bookings",
+    icon: Package,
+    color: "bg-green-50 text-green-600",
+  },
+  {
+    title: "Total Revenue",
+    value: "৳0",
+    description: "Platform revenue",
+    icon: Wallet,
+    color: "bg-purple-50 text-purple-600",
+  },
+];
+
+const customerActions: DashboardAction[] = [
   {
     title: "Explore Equipment",
     description: "Find equipment for your next project.",
@@ -69,31 +154,139 @@ const quickActions = [
   },
 ];
 
+const ownerActions: DashboardAction[] = [
+  {
+    title: "Add Equipment",
+    description: "List new equipment for rent.",
+    href: "/dashboard/owner/add-equipment",
+    icon: PlusCircle,
+  },
+  {
+    title: "My Equipment",
+    description: "Manage your listed equipment.",
+    href: "/dashboard/owner/my-equipment",
+    icon: Package,
+  },
+  {
+    title: "Rental Requests",
+    description: "Review incoming rental requests.",
+    href: "/dashboard/owner/rental-requests",
+    icon: ClipboardList,
+  },
+  {
+    title: "My Profile",
+    description: "Manage your account information.",
+    href: "/dashboard/profile",
+    icon: UserRound,
+  },
+];
+
+const adminActions: DashboardAction[] = [
+  {
+    title: "Manage Users",
+    description: "View and manage platform users.",
+    href: "/dashboard/admin/users",
+    icon: Users,
+  },
+  {
+    title: "Manage Equipment",
+    description: "Review and approve equipment.",
+    href: "/dashboard/admin/equipment",
+    icon: Package,
+  },
+  {
+    title: "Manage Rentals",
+    description: "Monitor all rental bookings.",
+    href: "/dashboard/admin/rentals",
+    icon: ClipboardList,
+  },
+  {
+    title: "Analytics",
+    description: "View platform performance.",
+    href: "/dashboard/admin/analytics",
+    icon: Settings,
+  },
+];
+
 export default function DashboardPage() {
+  const { data: session, isPending } = authClient.useSession();
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#eee4da] border-t-[#ea580c]" />
+      </div>
+    );
+  }
+
+  const role = session?.user?.role;
+
+  const isOwner = role === "owner";
+  const isAdmin = role === "admin";
+
+  const dashboardTitle = isAdmin
+    ? "Admin Dashboard"
+    : isOwner
+      ? "Owner Dashboard"
+      : "Customer Dashboard";
+
+  const welcomeDescription = isAdmin
+    ? "Manage users, equipment, rentals, and monitor the Rentora platform."
+    : isOwner
+      ? "Manage your equipment, handle rental requests, and track your earnings."
+      : "Manage your rentals, explore equipment, and keep everything organized in one place.";
+
+  const stats = isAdmin
+    ? adminStats
+    : isOwner
+      ? ownerStats
+      : customerStats;
+
+  const quickActions = isAdmin
+    ? adminActions
+    : isOwner
+      ? ownerActions
+      : customerActions;
+
+  const activityDescription = isAdmin
+    ? "Platform activities and updates will appear here."
+    : isOwner
+      ? "Your latest equipment and rental request activities will appear here."
+      : "Your latest rental activities will appear here.";
+
+  const ActivityIcon = isAdmin
+    ? ShieldCheck
+    : isOwner
+      ? Package
+      : CalendarCheck;
+
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Welcome Section */}
       <section className="flex flex-col justify-between gap-5 rounded-2xl bg-[#442719] p-6 text-white sm:flex-row sm:items-center sm:p-8">
         <div>
           <p className="mb-2 text-sm font-medium text-orange-300">
-            RENTORA DASHBOARD
+            RENTORA {dashboardTitle.toUpperCase()}
           </p>
 
           <h2 className="text-2xl font-bold sm:text-3xl">
-            Welcome to Your Dashboard!
+            Welcome to Your {dashboardTitle}!
           </h2>
 
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
-            Manage your rentals, explore equipment, and keep
-            everything organized in one place.
+            {welcomeDescription}
           </p>
         </div>
 
         <Link
-          href="/all-equipment"
+          href={isAdmin ? "/dashboard/admin/users" : isOwner ? "/dashboard/owner/add-equipment" : "/all-equipment"}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#ea580c] px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
         >
-          Explore Equipment
+          {isAdmin
+            ? "Manage Platform"
+            : isOwner
+              ? "Add Equipment"
+              : "Explore Equipment"}
           <ArrowUpRight size={18} />
         </Link>
       </section>
@@ -106,7 +299,11 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-1 text-sm text-[#9b8a7e]">
-            Your rental activity at a glance.
+            {isAdmin
+              ? "Your platform statistics at a glance."
+              : isOwner
+                ? "Your equipment and rental activity at a glance."
+                : "Your rental activity at a glance."}
           </p>
         </div>
 
@@ -202,12 +399,18 @@ export default function DashboardPage() {
             </h2>
 
             <p className="mt-1 text-sm text-[#9b8a7e]">
-              Your latest rental activities will appear here.
+              {activityDescription}
             </p>
           </div>
 
           <Link
-            href="/dashboard/my-rentals"
+            href={
+              isAdmin
+                ? "/dashboard/admin/rentals"
+                : isOwner
+                  ? "/dashboard/owner/rental-requests"
+                  : "/dashboard/my-rentals"
+            }
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#ea580c] hover:text-orange-700"
           >
             View All
@@ -217,7 +420,7 @@ export default function DashboardPage() {
 
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#faf7f2] text-[#a18d7e]">
-            <Package size={30} />
+            <ActivityIcon size={30} />
           </div>
 
           <h3 className="mt-4 font-semibold text-[#442719]">
@@ -225,17 +428,8 @@ export default function DashboardPage() {
           </h3>
 
           <p className="mt-2 max-w-sm text-sm leading-6 text-[#9b8a7e]">
-            Your recent bookings and rental activities will
-            appear here once you start using Rentora.
+            Your recent activities will appear here once you start using Rentora.
           </p>
-
-          <Link
-            href="/all-equipment"
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ea580c] px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
-          >
-            <PlusCircle size={18} />
-            Browse Equipment
-          </Link>
         </div>
       </section>
     </div>

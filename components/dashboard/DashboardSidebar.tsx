@@ -16,13 +16,23 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { authClient } from "@/lib/auth-client";
 
 interface DashboardSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const customerLinks = [
+interface DashboardLink {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+}
+
+const customerLinks: DashboardLink[] = [
   {
     name: "Overview",
     href: "/dashboard",
@@ -45,7 +55,7 @@ const customerLinks = [
   },
 ];
 
-const ownerLinks = [
+const ownerLinks: DashboardLink[] = [
   {
     name: "Add Equipment",
     href: "/dashboard/owner/add-equipment",
@@ -63,7 +73,7 @@ const ownerLinks = [
   },
 ];
 
-const adminLinks = [
+const adminLinks: DashboardLink[] = [
   {
     name: "Manage Users",
     href: "/dashboard/admin/users",
@@ -93,14 +103,20 @@ export default function DashboardSidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  const renderLinks = (
-    links: typeof customerLinks
-  ) => {
+  // Better Auth session
+  const { data: session, isPending } = authClient.useSession();
+
+  const role = session?.user?.role;
+
+  // Render navigation links
+  const renderLinks = (links: DashboardLink[]) => {
     return links.map((link) => {
       const Icon = link.icon;
 
       const isActive =
-        pathname === link.href;
+        pathname === link.href ||
+        (link.href !== "/dashboard" &&
+          pathname.startsWith(`${link.href}/`));
 
       return (
         <Link
@@ -120,13 +136,36 @@ export default function DashboardSidebar({
     });
   };
 
-  const handleLogout = () => {
-    // Authentication logout will be connected later.
-    router.push("/login");
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      const result = await authClient.signOut();
+
+      if (result.error) {
+        toast.error(result.error.message || "Logout failed!");
+        return;
+      }
+
+      toast.success("Logged out successfully!");
+
+      onClose();
+      router.push("/login");
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    }
   };
+
+  // Loading state
+  if (isPending) {
+    return (
+      <aside className="hidden h-screen w-72 shrink-0 border-r border-[#eee4da] bg-[#faf7f2] lg:block" />
+    );
+  }
 
   return (
     <>
+      {/* Mobile Overlay */}
       {isOpen && (
         <button
           type="button"
@@ -137,16 +176,15 @@ export default function DashboardSidebar({
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col border-r border-[#eee4da] bg-[#faf7f2] transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
-          isOpen
-            ? "translate-x-0"
-            : "-translate-x-full"
+        className={`fixed left-0 top-0 z-50 flex h-screen w-72 shrink-0 flex-col border-r border-[#eee4da] bg-[#faf7f2] transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Logo */}
-        <div className="flex h-20 items-center justify-between border-b border-[#eee4da] px-6">
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-[#eee4da] px-6">
           <Link
             href="/"
+            onClick={onClose}
             className="flex items-center gap-2"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#442719] text-white">
@@ -170,6 +208,7 @@ export default function DashboardSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-6">
+          {/* General */}
           <div>
             <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
               General
@@ -180,29 +219,35 @@ export default function DashboardSidebar({
             </div>
           </div>
 
-          <div>
-            <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
-              Owner Panel
-            </p>
+          {/* Owner Panel */}
+          {role === "owner" && (
+            <div>
+              <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
+                Owner Panel
+              </p>
 
-            <div className="space-y-1">
-              {renderLinks(ownerLinks)}
+              <div className="space-y-1">
+                {renderLinks(ownerLinks)}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div>
-            <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
-              Admin Panel
-            </p>
+          {/* Admin Panel */}
+          {role === "admin" && (
+            <div>
+              <p className="mb-3 px-4 text-xs font-bold uppercase tracking-wider text-[#a18d7e]">
+                Admin Panel
+              </p>
 
-            <div className="space-y-1">
-              {renderLinks(adminLinks)}
+              <div className="space-y-1">
+                {renderLinks(adminLinks)}
+              </div>
             </div>
-          </div>
+          )}
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-[#eee4da] p-4">
+        <div className="shrink-0 border-t border-[#eee4da] p-4">
           <button
             type="button"
             onClick={handleLogout}

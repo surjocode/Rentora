@@ -1,9 +1,9 @@
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({
@@ -24,9 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -39,7 +37,16 @@ export default function RootLayout({
       )}
     >
       <body className="flex min-h-screen flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            duration={3000}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );
