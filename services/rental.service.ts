@@ -82,3 +82,23 @@ export const cancelRental = async (
     }
   );
 };
+
+
+// Create Stripe Checkout Session
+export const createCheckoutSession = async (
+  rentalId: string
+): Promise<{
+  success: boolean;
+  message: string;
+  url?: string;
+}> => {
+  return apiRequest<{
+    success: boolean;
+    message: string;
+    url?: string;
+  }>("/api/payments/create-checkout-session", {
+    method: "POST",
+    requiresAuth: true,
+    body: JSON.stringify({ rentalId }),
+  });
+};

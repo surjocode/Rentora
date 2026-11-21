@@ -7,7 +7,6 @@ import Image from "next/image";
 import {
   Package,
   Search,
-  CalendarDays,
   MapPin,
   ArrowRight,
   Clock,
@@ -22,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   getMyRentals,
   cancelRental,
+  createCheckoutSession,
   type Rental,
 } from "@/services/rental.service";
 
@@ -73,6 +73,9 @@ export default function MyRentalsPage() {
     null
   );
 
+  const [payingId, setPayingId] = useState<string | null>(null);
+
+  // Fetch Customer Rentals
   const fetchRentals = useCallback(async () => {
     try {
       setLoading(true);
@@ -107,6 +110,7 @@ export default function MyRentalsPage() {
     void fetchRentals();
   }, [authLoading, isAuthenticated, isRenter, fetchRentals]);
 
+  // Search and Filter
   const filteredRentals = useMemo(() => {
     return rentals.filter((rental) => {
       const equipmentName = rental.equipment?.name ?? "";
@@ -128,6 +132,7 @@ export default function MyRentalsPage() {
     });
   }, [rentals, search, statusFilter]);
 
+  // Rental Summary
   const totalBookings = rentals.length;
 
   const approvedBookings = rentals.filter(
@@ -138,6 +143,7 @@ export default function MyRentalsPage() {
     (rental) => rental.status === "pending"
   ).length;
 
+  // Cancel Rental
   const handleCancelRental = async (rentalId: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to cancel this rental request?"
@@ -173,6 +179,34 @@ export default function MyRentalsPage() {
     }
   };
 
+  // Handle Stripe Payment
+  const handlePayNow = async (rentalId: string) => {
+    try {
+      setPayingId(rentalId);
+      setError(null);
+
+      const result = await createCheckoutSession(rentalId);
+
+      if (!result.success || !result.url) {
+        throw new Error(
+          result.message || "Failed to create checkout session."
+        );
+      }
+
+      // Redirect customer to Stripe Checkout
+      window.location.assign(result.url);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to initialize payment."
+      );
+
+      setPayingId(null);
+    }
+  };
+
+  // Rental Status Style
   const getStatusStyle = (status: Rental["status"]) => {
     switch (status) {
       case "approved":
@@ -192,6 +226,7 @@ export default function MyRentalsPage() {
     }
   };
 
+  // Rental Status Icon
   const getStatusIcon = (status: Rental["status"]) => {
     switch (status) {
       case "approved":
@@ -206,11 +241,16 @@ export default function MyRentalsPage() {
     }
   };
 
+  // Loading State
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto animate-spin text-[#ea580c]" size={36} />
+          <Loader2
+            className="mx-auto animate-spin text-[#ea580c]"
+            size={36}
+          />
+
           <p className="mt-3 text-sm text-[#9b8a7e]">
             Loading your rentals...
           </p>
@@ -219,6 +259,7 @@ export default function MyRentalsPage() {
     );
   }
 
+  // Authentication Check
   if (!isAuthenticated || !isRenter) {
     return (
       <div className="rounded-2xl border border-[#eee4da] bg-white px-5 py-16 text-center">
@@ -273,6 +314,7 @@ export default function MyRentalsPage() {
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <p className="text-sm text-[#9b8a7e]">Total Bookings</p>
+
           <h2 className="mt-2 text-3xl font-bold text-[#442719]">
             {totalBookings}
           </h2>
@@ -280,6 +322,7 @@ export default function MyRentalsPage() {
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <p className="text-sm text-[#9b8a7e]">Approved Bookings</p>
+
           <h2 className="mt-2 text-3xl font-bold text-blue-600">
             {approvedBookings}
           </h2>
@@ -287,6 +330,7 @@ export default function MyRentalsPage() {
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <p className="text-sm text-[#9b8a7e]">Pending Bookings</p>
+
           <h2 className="mt-2 text-3xl font-bold text-orange-600">
             {pendingBookings}
           </h2>
@@ -396,15 +440,18 @@ export default function MyRentalsPage() {
                     </div>
 
                     <h3 className="mt-3 text-lg font-bold text-[#442719]">
-                      {rental.equipment?.name || "Equipment no longer available"}
+                      {rental.equipment?.name ||
+                        "Equipment no longer available"}
                     </h3>
 
                     <p className="mt-2 flex items-center gap-1.5 text-sm text-[#9b8a7e]">
                       <MapPin size={15} />
-                      {rental.equipment?.location || "Location unavailable"}
+                      {rental.equipment?.location ||
+                        "Location unavailable"}
                     </p>
                   </div>
 
+                  {/* Rental Details */}
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                       <p className="text-xs text-[#9b8a7e]">
@@ -438,12 +485,14 @@ export default function MyRentalsPage() {
                     </div>
                   </div>
 
+                  {/* Booking Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f1e9e1] pt-4">
                     <p className="text-xs text-[#9b8a7e]">
                       Booked on {formatDate(rental.createdAt)}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-3">
+                      {/* Payment Status */}
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
                           rental.paymentStatus === "paid"
@@ -454,17 +503,49 @@ export default function MyRentalsPage() {
                         Payment: {rental.paymentStatus}
                       </span>
 
+                      {/* Pay Now Button */}
+                      {rental.status === "approved" &&
+                        rental.paymentStatus === "unpaid" && (
+                          <button
+                            onClick={() =>
+                              void handlePayNow(rental._id)
+                            }
+                            disabled={payingId === rental._id}
+                            className="inline-flex items-center gap-2 rounded-lg bg-[#ea580c] px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {payingId === rental._id ? (
+                              <Loader2
+                                size={14}
+                                className="animate-spin"
+                              />
+                            ) : (
+                              <span>৳</span>
+                            )}
+
+                            {payingId === rental._id
+                              ? "Redirecting..."
+                              : "Pay Now"}
+                          </button>
+                        )}
+
+                      {/* Cancel Booking Button */}
                       {rental.status === "pending" && (
                         <button
-                          onClick={() => void handleCancelRental(rental._id)}
+                          onClick={() =>
+                            void handleCancelRental(rental._id)
+                          }
                           disabled={cancellingId === rental._id}
                           className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {cancellingId === rental._id ? (
-                            <Loader2 size={14} className="animate-spin" />
+                            <Loader2
+                              size={14}
+                              className="animate-spin"
+                            />
                           ) : (
                             <XCircle size={14} />
                           )}
+
                           Cancel Booking
                         </button>
                       )}

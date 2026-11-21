@@ -127,7 +127,11 @@ export const getEquipmentById = async (
   id: string
 ): Promise<ApiResponse<Equipment>> => {
   return apiRequest<ApiResponse<Equipment>>(
-    `/api/equipment/${id}`
+    `/api/equipment/${id}`,
+    {
+      method: "GET",
+      requiresAuth: true,
+    }
   );
 };
 
