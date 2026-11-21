@@ -1,10 +1,9 @@
+"use client"
 
-"use client";
-
-import { useEffect, useState, type FormEvent } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
+import { useEffect, useState, type FormEvent } from "react"
+import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
 
 import {
   ArrowLeft,
@@ -15,53 +14,53 @@ import {
   User,
   RefreshCw,
   CheckCircle2,
-} from "lucide-react";
+  Minus,
+  Plus,
+} from "lucide-react"
 
-import {
-  getEquipmentById,
-  type Equipment,
-} from "@/services/equipment.service";
+import { getEquipmentById, type Equipment } from "@/services/equipment.service"
 
-import { createRental } from "@/services/rental.service";
-import { useAuth } from "@/hooks/use-auth";
+import { createRental } from "@/services/rental.service"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function EquipmentDetailsPage() {
-  const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const params = useParams<{ id: string }>()
+  const router = useRouter()
 
-  const id = params.id;
+  const id = params.id
 
-  // Authentication
-  const {
-    isAuthenticated,
-    loading: authLoading,
-    isRenter,
-  } = useAuth();
+  const { isAuthenticated, loading: authLoading, isRenter } = useAuth()
 
   // Equipment State
-  const [equipment, setEquipment] = useState<Equipment | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<Equipment | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Booking Date State
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+
+  // Booking Quantity
+  const [quantity, setQuantity] = useState(1)
 
   // Booking State
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
+  const [bookingLoading, setBookingLoading] = useState(false)
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [bookingSuccess, setBookingSuccess] = useState<string | null>(null)
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date();
+  // Today's date in YYYY-MM-DD format
+  const today = new Date()
 
   const minDate = [
     today.getFullYear(),
     String(today.getMonth() + 1).padStart(2, "0"),
     String(today.getDate()).padStart(2, "0"),
-  ].join("-");
+  ].join("-")
 
-  // Calculate rental days
+  // Available Quantity
+  const availableQuantity = equipment?.availableQuantity ?? 0
+
+  // Calculate Rental Days
   const totalDays =
     startDate && endDate
       ? Math.round(
@@ -69,31 +68,32 @@ export default function EquipmentDetailsPage() {
             Date.parse(`${startDate}T00:00:00Z`)) /
             (1000 * 60 * 60 * 24)
         )
-      : 0;
+      : 0
 
-  // Calculate estimated rental price
+  // Calculate Total Rental Price
   const totalPrice =
     equipment && totalDays > 0
-      ? totalDays * equipment.pricePerDay
-      : 0;
+      ? totalDays * equipment.pricePerDay * quantity
+      : 0
 
   // Fetch Equipment Details
   useEffect(() => {
-    let isActive = true;
+    let isActive = true
 
     const fetchEquipment = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        setLoading(true)
+        setError(null)
 
-        const result = await getEquipmentById(id);
+        const result = await getEquipmentById(id)
 
         if (!result.success) {
-          throw new Error(result.message);
+          throw new Error(result.message)
         }
 
         if (isActive) {
-          setEquipment(result.data);
+          setEquipment(result.data)
+          setQuantity(1)
         }
       } catch (error) {
         if (isActive) {
@@ -101,94 +101,104 @@ export default function EquipmentDetailsPage() {
             error instanceof Error
               ? error.message
               : "Failed to load equipment details"
-          );
+          )
         }
       } finally {
         if (isActive) {
-          setLoading(false);
+          setLoading(false)
         }
       }
-    };
+    }
 
     if (id) {
-      void fetchEquipment();
+      void fetchEquipment()
     }
 
     return () => {
-      isActive = false;
-    };
-  }, [id]);
+      isActive = false
+    }
+  }, [id])
 
-  // Handle Booking Request
+  // Handle Booking
   const handleBooking = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault()
 
-    setBookingError(null);
-    setBookingSuccess(null);
+    setBookingError(null)
+    setBookingSuccess(null)
 
-    // Check Authentication Loading
     if (authLoading) {
-      setBookingError("Please wait while checking your account.");
-      return;
+      setBookingError("Please wait while checking your account.")
+      return
     }
 
-    // Check User Authentication
     if (!isAuthenticated) {
-      router.push("/login");
-      return;
+      router.push("/login")
+      return
     }
 
-    // Only Renters Can Book Equipment
     if (!isRenter) {
-      setBookingError("Only renter accounts can book equipment.");
-      return;
+      setBookingError("Only renter accounts can book equipment.")
+      return
     }
 
-    // Validate Rental Dates
     if (!startDate || !endDate) {
-      setBookingError("Please select both rental dates.");
-      return;
+      setBookingError("Please select both rental dates.")
+      return
     }
 
     if (startDate < minDate) {
-      setBookingError("Start date cannot be in the past.");
-      return;
+      setBookingError("Start date cannot be in the past.")
+      return
     }
 
     if (totalDays <= 0) {
-      setBookingError("End date must be after the start date.");
-      return;
+      setBookingError("End date must be after the start date.")
+      return
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setBookingError("Please select a valid quantity.")
+      return
+    }
+
+    if (quantity > availableQuantity) {
+      setBookingError(
+        `Only ${availableQuantity} items are currently available.`
+      )
+      return
     }
 
     try {
-      setBookingLoading(true);
+      setBookingLoading(true)
 
       const result = await createRental({
         equipmentId: id,
         startDate,
         endDate,
-      });
+        quantity,
+      })
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
       setBookingSuccess(
-        "Your rental request has been submitted successfully!"
-      );
+        "Booking created successfully! Please visit My Rentals to complete your payment."
+      )
 
-      setStartDate("");
-      setEndDate("");
+      setStartDate("")
+      setEndDate("")
+      setQuantity(1)
     } catch (error) {
       setBookingError(
         error instanceof Error
           ? error.message
-          : "Failed to submit booking request."
-      );
+          : "Failed to create your booking."
+      )
     } finally {
-      setBookingLoading(false);
+      setBookingLoading(false)
     }
-  };
+  }
 
   return (
     <main className="min-h-screen bg-[#faf7f2] px-5 py-12 sm:px-6 lg:px-8">
@@ -221,18 +231,13 @@ export default function EquipmentDetailsPage() {
         {/* Error */}
         {!loading && error && (
           <div className="rounded-3xl border border-red-200 bg-white px-5 py-16 text-center">
-            <Package
-              size={48}
-              className="mx-auto text-red-400"
-            />
+            <Package size={48} className="mx-auto text-red-400" />
 
             <h2 className="mt-5 text-xl font-bold text-[#442719]">
               Unable to Load Equipment
             </h2>
 
-            <p className="mt-3 text-sm text-red-600">
-              {error}
-            </p>
+            <p className="mt-3 text-sm text-red-600">{error}</p>
 
             <Link
               href="/all-equipment"
@@ -258,10 +263,7 @@ export default function EquipmentDetailsPage() {
                   className="object-cover transition duration-500 hover:scale-105"
                 />
               ) : (
-                <Package
-                  size={80}
-                  className="text-orange-500"
-                />
+                <Package size={80} className="text-orange-500" />
               )}
             </div>
 
@@ -281,12 +283,10 @@ export default function EquipmentDetailsPage() {
 
               {/* Price */}
               <div className="mt-7 rounded-2xl bg-[#faf7f2] p-5">
-                <p className="text-sm text-[#806b5e]">
-                  Rental Price
-                </p>
+                <p className="text-sm text-[#806b5e]">Rental Price</p>
 
                 <p className="mt-2 text-3xl font-bold text-orange-600">
-                  ৳{equipment.pricePerDay}
+                  ৳{equipment.pricePerDay.toLocaleString("en-BD")}
                 </p>
 
                 <p className="mt-1 text-xs text-[#806b5e]">
@@ -297,10 +297,7 @@ export default function EquipmentDetailsPage() {
               {/* Additional Information */}
               <div className="mt-7 space-y-5">
                 <div className="flex items-center gap-3">
-                  <MapPin
-                    className="shrink-0 text-orange-600"
-                    size={20}
-                  />
+                  <MapPin className="shrink-0 text-orange-600" size={20} />
 
                   <span className="text-sm text-[#665348]">
                     {equipment.location}
@@ -308,12 +305,9 @@ export default function EquipmentDetailsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <User
-                    className="shrink-0 text-orange-600"
-                    size={20}
-                  />
+                  <User className="shrink-0 text-orange-600" size={20} />
 
-                  <span className="break-all text-sm text-[#665348]">
+                  <span className="text-sm break-all text-[#665348]">
                     Owner: {equipment.ownerEmail}
                   </span>
                 </div>
@@ -326,20 +320,23 @@ export default function EquipmentDetailsPage() {
 
                   <span className="text-sm text-[#665348]">
                     Listed on{" "}
-                    {new Date(equipment.createdAt).toLocaleDateString(
-                      "en-GB"
-                    )}
+                    {new Date(equipment.createdAt).toLocaleDateString("en-GB")}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <ShieldCheck
-                    className="shrink-0 text-orange-600"
-                    size={20}
-                  />
+                  <ShieldCheck className="shrink-0 text-orange-600" size={20} />
 
                   <span className="text-sm text-[#665348]">
                     Approved equipment
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Package className="shrink-0 text-orange-600" size={20} />
+
+                  <span className="text-sm text-[#665348]">
+                    {availableQuantity} items available
                   </span>
                 </div>
               </div>
@@ -351,13 +348,10 @@ export default function EquipmentDetailsPage() {
                 </h2>
 
                 <p className="mt-2 text-sm text-[#806b5e]">
-                  Select your rental period to request a booking.
+                  Select your rental period and quantity.
                 </p>
 
-                <form
-                  onSubmit={handleBooking}
-                  className="mt-6 space-y-5"
-                >
+                <form onSubmit={handleBooking} className="mt-6 space-y-5">
                   {/* Start Date */}
                   <div>
                     <label
@@ -373,19 +367,16 @@ export default function EquipmentDetailsPage() {
                       value={startDate}
                       min={minDate}
                       onChange={(event) => {
-                        setStartDate(event.target.value);
-                        setBookingError(null);
-                        setBookingSuccess(null);
+                        setStartDate(event.target.value)
+                        setBookingError(null)
+                        setBookingSuccess(null)
 
-                        if (
-                          endDate &&
-                          event.target.value >= endDate
-                        ) {
-                          setEndDate("");
+                        if (endDate && event.target.value >= endDate) {
+                          setEndDate("")
                         }
                       }}
                       required
-                      className="w-full rounded-xl border border-[#eee5dc] px-4 py-3 text-sm outline-none transition focus:border-orange-500"
+                      className="w-full rounded-xl border border-[#eee5dc] px-4 py-3 text-sm transition outline-none focus:border-orange-500"
                     />
                   </div>
 
@@ -404,13 +395,64 @@ export default function EquipmentDetailsPage() {
                       value={endDate}
                       min={startDate || minDate}
                       onChange={(event) => {
-                        setEndDate(event.target.value);
-                        setBookingError(null);
-                        setBookingSuccess(null);
+                        setEndDate(event.target.value)
+                        setBookingError(null)
+                        setBookingSuccess(null)
                       }}
                       required
-                      className="w-full rounded-xl border border-[#eee5dc] px-4 py-3 text-sm outline-none transition focus:border-orange-500"
+                      className="w-full rounded-xl border border-[#eee5dc] px-4 py-3 text-sm transition outline-none focus:border-orange-500"
                     />
+                  </div>
+
+                  {/* Quantity Selector */}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-[#665348]">
+                      Select Quantity
+                    </label>
+
+                    <div className="flex items-center justify-between rounded-xl border border-[#eee5dc] px-4 py-3">
+                      <span className="text-sm text-[#806b5e]">
+                        Number of items
+                      </span>
+
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuantity((previous) => Math.max(1, previous - 1))
+                            setBookingError(null)
+                          }}
+                          disabled={quantity <= 1}
+                          aria-label="Decrease quantity"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#eee5dc] text-[#442719] transition hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Minus size={16} />
+                        </button>
+
+                        <span className="min-w-6 text-center font-bold text-[#442719]">
+                          {quantity}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuantity((previous) =>
+                              Math.min(availableQuantity, previous + 1)
+                            )
+                            setBookingError(null)
+                          }}
+                          disabled={quantity >= availableQuantity}
+                          aria-label="Increase quantity"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#eee5dc] text-[#442719] transition hover:bg-[#faf7f2] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-xs text-[#806b5e]">
+                      Maximum available quantity: {availableQuantity}
+                    </p>
                   </div>
 
                   {/* Rental Summary */}
@@ -423,12 +465,27 @@ export default function EquipmentDetailsPage() {
                       <div className="mt-4 space-y-3 text-sm">
                         <div className="flex justify-between text-[#806b5e]">
                           <span>Price per day</span>
-                          <span>৳{equipment.pricePerDay}</span>
+                          <span>
+                            ৳{equipment.pricePerDay.toLocaleString("en-BD")}
+                          </span>
                         </div>
 
                         <div className="flex justify-between text-[#806b5e]">
-                          <span>Total rental days</span>
+                          <span>Rental duration</span>
                           <span>{totalDays} days</span>
+                        </div>
+
+                        <div className="flex justify-between text-[#806b5e]">
+                          <span>Quantity</span>
+                          <span>{quantity} items</span>
+                        </div>
+
+                        <div className="flex justify-between text-[#806b5e]">
+                          <span>Calculation</span>
+                          <span>
+                            {totalDays} × {quantity} × ৳
+                            {equipment.pricePerDay.toLocaleString("en-BD")}
+                          </span>
                         </div>
 
                         <div className="flex justify-between border-t border-[#dfd0c2] pt-3 font-bold text-[#442719]">
@@ -458,12 +515,18 @@ export default function EquipmentDetailsPage() {
                       role="status"
                       className="flex items-start gap-3 rounded-xl bg-green-50 p-4 text-sm text-green-700"
                     >
-                      <CheckCircle2
-                        size={20}
-                        className="shrink-0"
-                      />
+                      <CheckCircle2 size={20} className="shrink-0" />
 
-                      <span>{bookingSuccess}</span>
+                      <div>
+                        <p>{bookingSuccess}</p>
+
+                        <Link
+                          href="/dashboard/my-rentals"
+                          className="mt-2 inline-block font-semibold underline"
+                        >
+                          Go to My Rentals
+                        </Link>
+                      </div>
                     </div>
                   )}
 
@@ -473,6 +536,8 @@ export default function EquipmentDetailsPage() {
                     disabled={
                       bookingLoading ||
                       authLoading ||
+                      availableQuantity < 1 ||
+                      quantity > availableQuantity ||
                       (isAuthenticated && !isRenter)
                     }
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -481,28 +546,27 @@ export default function EquipmentDetailsPage() {
                       "Checking Account..."
                     ) : bookingLoading ? (
                       <>
-                        <RefreshCw
-                          size={18}
-                          className="animate-spin"
-                        />
-                        Submitting Request...
+                        <RefreshCw size={18} className="animate-spin" />
+                        Creating Booking...
                       </>
                     ) : !isAuthenticated ? (
-                      "Login to Request Booking"
+                      "Login to Book"
                     ) : !isRenter ? (
                       "Renter Account Required"
+                    ) : availableQuantity < 1 ? (
+                      "Currently Unavailable"
                     ) : (
-                      "Request Booking"
+                      "Book Now"
                     )}
                   </button>
 
-                  {/* Authentication Information */}
+                  {/* Information */}
                   <p className="text-center text-xs leading-6 text-[#806b5e]">
                     {!isAuthenticated
-                      ? "Please login to your account before requesting a booking."
+                      ? "Please login to your account before booking."
                       : !isRenter
                         ? "Only renter accounts are allowed to book equipment."
-                        : "Your booking request will be sent to the equipment owner for approval."}
+                        : "Your booking will be reserved temporarily. Complete your payment to confirm the booking."}
                   </p>
                 </form>
               </div>
@@ -511,5 +575,5 @@ export default function EquipmentDetailsPage() {
         )}
       </div>
     </main>
-  );
+  )
 }

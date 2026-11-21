@@ -1,158 +1,103 @@
+"use client"
 
-"use client";
+import { useCallback, useEffect, useState } from "react"
 
-import { useCallback, useEffect, useState } from "react";
 import {
   getMyRentals,
-  getOwnerRentalRequests,
+  getOwnerBookings,
   createRental,
-  updateRentalStatus,
-  cancelRental,
   type Rental,
-} from "@/services/rental.service";
+} from "@/services/rental.service"
 
 export function useRentals() {
-  const [rentals, setRentals] = useState<Rental[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [rentals, setRentals] = useState<Rental[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // Customer: Fetch own bookings
   const fetchMyRentals = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      const result = await getMyRentals();
+      const result = await getMyRentals()
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
-      setRentals(result.data);
+      setRentals(result.data)
     } catch (error) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch rentals"
-      );
+        error instanceof Error ? error.message : "Failed to fetch your bookings"
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
-  const fetchOwnerRequests = useCallback(async () => {
+  // Owner: Fetch paid bookings for own equipment
+  const fetchOwnerBookings = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      const result = await getOwnerRentalRequests();
+      const result = await getOwnerBookings()
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
-      setRentals(result.data);
+      setRentals(result.data)
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
-          : "Failed to fetch rental requests"
-      );
+          : "Failed to fetch customer bookings"
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
+  // Customer: Create a booking
   const requestRental = async (data: {
-    equipmentId: string;
-    startDate: string;
-    endDate: string;
+    equipmentId: string
+    startDate: string
+    endDate: string
+    quantity: number
   }) => {
     try {
-      setError(null);
+      setError(null)
 
-      const result = await createRental(data);
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      await fetchMyRentals();
-
-      return result;
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to create rental request";
-
-      setError(message);
-      throw error;
-    }
-  };
-
-  const changeRentalStatus = async (
-    id: string,
-    status: "approved" | "rejected"
-  ) => {
-    try {
-      setError(null);
-
-      const result = await updateRentalStatus(id, status);
+      const result = await createRental(data)
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
-      await fetchOwnerRequests();
+      await fetchMyRentals()
 
-      return result;
+      return result
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to update rental status";
+        error instanceof Error ? error.message : "Failed to create booking"
 
-      setError(message);
-      throw error;
+      setError(message)
+      throw error
     }
-  };
-
-  const cancelMyRental = async (id: string) => {
-    try {
-      setError(null);
-
-      const result = await cancelRental(id);
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      await fetchMyRentals();
-
-      return result;
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to cancel rental";
-
-      setError(message);
-      throw error;
-    }
-  };
+  }
 
   useEffect(() => {
-    void fetchMyRentals();
-  }, [fetchMyRentals]);
+    void fetchMyRentals()
+  }, [fetchMyRentals])
 
   return {
     rentals,
     loading,
     error,
     fetchMyRentals,
-    fetchOwnerRequests,
+    fetchOwnerBookings,
     requestRental,
-    changeRentalStatus,
-    cancelMyRental,
-  };
+  }
 }

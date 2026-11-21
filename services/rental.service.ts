@@ -1,6 +1,15 @@
 
 import { apiRequest } from "@/lib/api";
 
+export interface RentalEquipment {
+  _id: string;
+  name: string;
+  image: string;
+  category: string;
+  location: string;
+  pricePerDay: number;
+}
+
 export interface Rental {
   _id: string;
   equipmentId: string;
@@ -9,11 +18,14 @@ export interface Rental {
   startDate: string;
   endDate: string;
   totalDays: number;
+  quantity: number;
   totalPrice: number;
-  status: "pending" | "approved" | "rejected" | "cancelled";
   paymentStatus: "unpaid" | "paid";
+  stripePaymentIntentId?: string;
+  expiresAt?: string;
   createdAt: string;
   updatedAt: string;
+  equipment?: RentalEquipment;
 }
 
 interface ApiResponse<T> {
@@ -22,12 +34,13 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// Create rental request
+// Create rental booking
 export const createRental = async (
   rental: {
     equipmentId: string;
     startDate: string;
     endDate: string;
+    quantity: number;
   }
 ): Promise<ApiResponse<Rental>> => {
   return apiRequest<ApiResponse<Rental>>("/api/rentals", {
@@ -37,7 +50,7 @@ export const createRental = async (
   });
 };
 
-// Get logged-in renter's rentals
+// Get logged-in customer's rentals
 export const getMyRentals = async (): Promise<
   ApiResponse<Rental[]>
 > => {
@@ -46,8 +59,8 @@ export const getMyRentals = async (): Promise<
   });
 };
 
-// Get rental requests for logged-in owner
-export const getOwnerRentalRequests = async (): Promise<
+// Get paid bookings for logged-in owner
+export const getOwnerBookings = async (): Promise<
   ApiResponse<Rental[]>
 > => {
   return apiRequest<ApiResponse<Rental[]>>("/api/rentals/owner", {
@@ -55,50 +68,23 @@ export const getOwnerRentalRequests = async (): Promise<
   });
 };
 
-// Approve or reject rental request
-export const updateRentalStatus = async (
-  id: string,
-  status: "approved" | "rejected"
-): Promise<ApiResponse<Rental>> => {
-  return apiRequest<ApiResponse<Rental>>(
-    `/api/rentals/${id}/status`,
-    {
-      method: "PATCH",
-      requiresAuth: true,
-      body: JSON.stringify({ status }),
-    }
-  );
-};
-
-// Cancel rental request
-export const cancelRental = async (
-  id: string
-): Promise<ApiResponse<Rental>> => {
-  return apiRequest<ApiResponse<Rental>>(
-    `/api/rentals/${id}/cancel`,
-    {
-      method: "PATCH",
-      requiresAuth: true,
-    }
-  );
-};
-
-
-// Create Stripe Checkout Session
-export const createCheckoutSession = async (
-  rentalId: string
-): Promise<{
+// Stripe PaymentIntent response
+export interface PaymentIntentResponse {
   success: boolean;
   message: string;
-  url?: string;
-}> => {
-  return apiRequest<{
-    success: boolean;
-    message: string;
-    url?: string;
-  }>("/api/payments/create-checkout-session", {
-    method: "POST",
-    requiresAuth: true,
-    body: JSON.stringify({ rentalId }),
-  });
+  clientSecret?: string | null;
+}
+
+// Create Stripe PaymentIntent
+export const createPaymentIntent = async (
+  rentalId: string
+): Promise<PaymentIntentResponse> => {
+  return apiRequest<PaymentIntentResponse>(
+    "/api/payments/create-payment-intent",
+    {
+      method: "POST",
+      requiresAuth: true,
+      body: JSON.stringify({ rentalId }),
+    }
+  );
 };
