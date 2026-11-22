@@ -21,7 +21,7 @@ export default function NotFound() {
 
         <p className="mt-4 text-sm leading-7 text-[#806b5e] sm:text-base">
           Oops! The page you are looking for does not exist or may have been
-          moved. Let's get you back on track.
+          moved. Let&apos;s get you back on track.
         </p>
 
         {/* Buttons */}

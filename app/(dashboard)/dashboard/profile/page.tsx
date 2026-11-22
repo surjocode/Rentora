@@ -11,7 +11,6 @@ import {
   Save,
   ShieldCheck,
   CalendarDays,
-  Pencil,
 } from "lucide-react";
 
 export default function ProfilePage() {

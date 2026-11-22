@@ -9,7 +9,41 @@ export function useCategories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = useCallback(async () => {
+  useEffect(() => {
+    let isActive = true;
+
+    getAllCategories()
+      .then((result) => {
+        if (!isActive) return;
+
+        if (!result.success) {
+          throw new Error(result.message);
+        }
+
+        setCategories(result.data);
+        setError(null);
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch categories"
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const refetch = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -21,7 +55,7 @@ export function useCategories() {
       }
 
       setCategories(result.data);
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -32,14 +66,10 @@ export function useCategories() {
     }
   }, []);
 
-  useEffect(() => {
-    void fetchCategories();
-  }, [fetchCategories]);
-
   return {
     categories,
     loading,
     error,
-    refetch: fetchCategories,
+    refetch,
   };
 }

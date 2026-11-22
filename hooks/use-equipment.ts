@@ -17,7 +17,52 @@ export function useEquipment(filters: EquipmentFilters = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEquipment = useCallback(async () => {
+  useEffect(() => {
+    let isActive = true;
+
+    Promise.resolve()
+      .then(() => {
+        if (!isActive) return undefined;
+
+        setLoading(true);
+        setError(null);
+
+        return getAllEquipment({
+          search,
+          category,
+          sort,
+        });
+      })
+      .then((result) => {
+        if (!isActive || !result) return;
+
+        if (!result.success) {
+          throw new Error(result.message);
+        }
+
+        setEquipment(result.data);
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch equipment"
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [search, category, sort]);
+
+  const refetch = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -33,7 +78,7 @@ export function useEquipment(filters: EquipmentFilters = {}) {
       }
 
       setEquipment(result.data);
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -44,14 +89,10 @@ export function useEquipment(filters: EquipmentFilters = {}) {
     }
   }, [search, category, sort]);
 
-  useEffect(() => {
-    void fetchEquipment();
-  }, [fetchEquipment]);
-
   return {
     equipment,
     loading,
     error,
-    refetch: fetchEquipment,
+    refetch,
   };
 }

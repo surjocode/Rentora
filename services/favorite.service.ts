@@ -8,13 +8,53 @@ interface ApiResponse<T> {
   data: T;
 }
 
+interface FavoriteApiItem {
+  _id: string;
+  ownerEmail: string;
+  equipmentId: string;
+  createdAt: string;
+  equipment: Equipment & {
+    imageUrl?: string;
+  };
+}
+
+interface FavoriteListResponse {
+  success: boolean;
+  message: string;
+  data: FavoriteApiItem[];
+}
+
 // Get logged-in user's favorites
 export const getMyFavorites = async (): Promise<
   ApiResponse<Equipment[]>
 > => {
-  return apiRequest<ApiResponse<Equipment[]>>("/api/favorites", {
-    requiresAuth: true,
-  });
+  const response = await apiRequest<FavoriteListResponse>(
+    "/api/favorites",
+    {
+      requiresAuth: true,
+    }
+  );
+
+  if (!response.success) {
+    throw new Error(response.message || "Failed to load favorites");
+  }
+
+  const equipmentList: Equipment[] = response.data
+    .filter((favorite) => favorite.equipment)
+    .map((favorite) => {
+      const equipment = favorite.equipment;
+
+      return {
+        ...equipment,
+        image: equipment.image || equipment.imageUrl || "",
+      };
+    });
+
+  return {
+    success: true,
+    message: response.message,
+    data: equipmentList,
+  };
 };
 
 // Add equipment to favorites

@@ -83,7 +83,7 @@ export default function ManageEquipmentPage() {
       }
 
       setEquipment(response.data);
-    } catch (err) {
+    } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Something went wrong.";
 
@@ -94,9 +94,43 @@ export default function ManageEquipmentPage() {
     }
   }, []);
 
+  // Initial equipment fetch
   useEffect(() => {
-    void fetchEquipment();
-  }, [fetchEquipment]);
+    let isActive = true;
+
+    Promise.resolve()
+      .then(() => getAllAdminEquipment())
+      .then((response) => {
+        if (!isActive) return;
+
+        if (!response.success) {
+          throw new Error(
+            response.message || "Failed to load equipment."
+          );
+        }
+
+        setEquipment(response.data);
+        setError("");
+      })
+      .catch((err: unknown) => {
+        if (!isActive) return;
+
+        const message =
+          err instanceof Error ? err.message : "Something went wrong.";
+
+        setError(message);
+        toast.error(message);
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const handleStatusUpdate = async (
     id: string,
@@ -118,7 +152,7 @@ export default function ManageEquipmentPage() {
       );
 
       await fetchEquipment();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : "Something went wrong."
       );
@@ -145,7 +179,9 @@ export default function ManageEquipmentPage() {
     });
   };
 
-  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     if (!editingEquipment) return;
@@ -154,7 +190,9 @@ export default function ManageEquipmentPage() {
       !editForm.name.trim() ||
       !editForm.category.trim() ||
       !editForm.location.trim() ||
+      !Number.isFinite(editForm.pricePerDay) ||
       editForm.pricePerDay <= 0 ||
+      !Number.isInteger(editForm.availableQuantity) ||
       editForm.availableQuantity < 1
     ) {
       toast.error("Please enter valid equipment information.");
@@ -178,7 +216,7 @@ export default function ManageEquipmentPage() {
       setEditForm(emptyForm);
 
       await fetchEquipment();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : "Something went wrong."
       );
@@ -205,7 +243,7 @@ export default function ManageEquipmentPage() {
 
       toast.success("Equipment deleted successfully.");
       await fetchEquipment();
-    } catch (err) {
+    } catch (err: unknown) {
       toast.error(
         err instanceof Error ? err.message : "Something went wrong."
       );
@@ -215,10 +253,12 @@ export default function ManageEquipmentPage() {
   };
 
   const filteredEquipment = equipment.filter((item) => {
+    const normalizedSearch = search.trim().toLowerCase();
+
     const matchesSearch =
-      item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.ownerEmail.toLowerCase().includes(search.toLowerCase()) ||
-      item.category.toLowerCase().includes(search.toLowerCase());
+      item.name.toLowerCase().includes(normalizedSearch) ||
+      item.ownerEmail.toLowerCase().includes(normalizedSearch) ||
+      item.category.toLowerCase().includes(normalizedSearch);
 
     const matchesStatus =
       statusFilter === "all" || item.status === statusFilter;
@@ -316,6 +356,7 @@ export default function ManageEquipmentPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search equipment..."
+              aria-label="Search equipment"
               className="w-full bg-transparent text-sm outline-none sm:w-48"
             />
           </div>
@@ -325,6 +366,7 @@ export default function ManageEquipmentPage() {
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
+              aria-label="Filter equipment by status"
               className="bg-transparent py-2.5 text-sm text-[#6b5a50] outline-none"
             >
               <option value="all">All Status</option>
@@ -363,7 +405,10 @@ export default function ManageEquipmentPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-16 text-center text-sm text-[#9b8a7e]">
+                  <td
+                    colSpan={6}
+                    className="px-5 py-16 text-center text-sm text-[#9b8a7e]"
+                  >
                     Loading equipment...
                   </td>
                 </tr>
@@ -372,6 +417,7 @@ export default function ManageEquipmentPage() {
                   <td colSpan={6} className="px-5 py-16 text-center">
                     <p className="font-semibold text-red-600">{error}</p>
                     <button
+                      type="button"
                       onClick={() => void fetchEquipment()}
                       className="mt-3 text-sm font-semibold text-[#ea580c]"
                     >
@@ -518,7 +564,8 @@ export default function ManageEquipmentPage() {
 
         <div className="border-t border-[#eee4da] px-5 py-4">
           <p className="text-sm text-[#9b8a7e]">
-            Showing {filteredEquipment.length} of {equipment.length} equipment listings
+            Showing {filteredEquipment.length} of {equipment.length} equipment
+            listings
           </p>
         </div>
       </section>
@@ -554,6 +601,7 @@ export default function ManageEquipmentPage() {
                 type="button"
                 onClick={() => setEditingEquipment(null)}
                 disabled={saving}
+                aria-label="Close edit form"
                 className="rounded-lg p-2 text-[#9b8a7e] hover:bg-[#faf7f2]"
               >
                 <X size={20} />

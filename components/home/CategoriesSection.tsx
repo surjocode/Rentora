@@ -70,10 +70,10 @@ export default function CategoriesSection({
   return (
     <section
       id="categories"
-      className="relative overflow-hidden bg-[#faf7f2] px-5 py-20 transition-colors duration-300 dark:bg-[#17120f] sm:px-6 lg:px-8"
+      className="relative overflow-hidden bg-background px-5 py-20 transition-colors duration-300 sm:px-6 lg:px-8"
     >
       {/* Decorative Background */}
-      <div className="pointer-events-none absolute -left-24 top-20 h-64 w-64 rounded-full bg-orange-200/20 blur-3xl dark:bg-orange-500/10" />
+      <div className="pointer-events-none absolute -left-24 top-20 h-64 w-64 rounded-full bg-secondary/60 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
         {/* Section Heading */}
@@ -84,24 +84,24 @@ export default function CategoriesSection({
           transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
-          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-bold tracking-wider text-orange-700 dark:border-orange-400/20 dark:bg-orange-500/10 dark:text-orange-400">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-bold tracking-wider text-foreground">
             <Shapes size={15} />
             EXPLORE OUR COLLECTION
           </span>
 
-          <h2 className="text-3xl font-black tracking-tight text-[#442719] dark:text-[#f5e9dc] sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Browse by{" "}
-            <span className="text-[#ea580c] dark:text-orange-400">
+            <span className="text-muted-foreground">
               Categories
             </span>
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#74675f] dark:text-gray-400 sm:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
             Discover the right equipment for every project.
             Explore different categories and find exactly what you need.
           </p>
 
-          <div className="mx-auto mt-6 h-1 w-20 rounded-full bg-[#ea580c]" />
+          <div className="mx-auto mt-6 h-1 w-20 rounded-full bg-foreground" />
         </motion.div>
 
         {/* Category Grid */}
@@ -123,23 +123,23 @@ export default function CategoriesSection({
                 >
                   <Link
                     href={`/all-equipment?category=${encodeURIComponent(category)}`}
-                    className="group relative flex min-h-[170px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-[#e9dfd4] bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-orange-300 hover:shadow-xl hover:shadow-orange-900/10 dark:border-white/10 dark:bg-[#241c17] dark:hover:border-orange-500/50 sm:min-h-[185px]"
+                    className="group relative flex min-h-[170px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border bg-card p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-ring hover:shadow-xl sm:min-h-[185px]"
                   >
                     {/* Hover Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/0 to-orange-100/0 transition-all duration-300 group-hover:from-orange-50 group-hover:to-orange-100/60 dark:group-hover:from-orange-950/30 dark:group-hover:to-orange-900/10" />
+                    <div className="absolute inset-0 bg-secondary/0 transition-all duration-300 group-hover:bg-secondary/70" />
 
                     {/* Icon */}
-                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#faf0e6] text-[#ea580c] transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-[#ea580c] group-hover:text-white dark:bg-orange-500/10 dark:text-orange-400 dark:group-hover:bg-orange-600 dark:group-hover:text-white">
+                    <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-foreground transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-primary group-hover:text-primary-foreground">
                       <Icon size={30} strokeWidth={1.8} />
                     </div>
 
                     {/* Category Name */}
-                    <h3 className="relative line-clamp-2 text-sm font-bold text-[#442719] transition-colors duration-300 group-hover:text-[#ea580c] dark:text-[#f5e9dc] dark:group-hover:text-orange-400 sm:text-base">
+                    <h3 className="relative line-clamp-2 text-sm font-bold text-foreground transition-colors duration-300 group-hover:text-muted-foreground sm:text-base">
                       {category}
                     </h3>
 
                     {/* Explore Indicator */}
-                    <div className="relative mt-3 flex items-center gap-1 text-xs font-semibold text-[#9b8270] opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 dark:text-gray-400">
+                    <div className="relative mt-3 flex items-center gap-1 text-xs font-semibold text-muted-foreground opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                       Explore
                       <ArrowRight size={13} />
                     </div>
@@ -149,16 +149,16 @@ export default function CategoriesSection({
             })}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-[#d9cfc5] bg-white px-5 py-16 text-center dark:border-white/15 dark:bg-[#241c17]">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-orange-500 dark:bg-orange-500/10 dark:text-orange-400">
+          <div className="rounded-3xl border border-dashed border-border bg-card px-5 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-foreground">
               <Shapes size={32} />
             </div>
 
-            <h3 className="text-lg font-bold text-[#442719] dark:text-[#f5e9dc]">
+            <h3 className="text-lg font-bold text-foreground">
               No Categories Available
             </h3>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#74675f] dark:text-gray-400">
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
               Categories will appear here once they are loaded from the database.
               Please check back soon.
             </p>
@@ -169,7 +169,7 @@ export default function CategoriesSection({
         <div className="mt-12 text-center">
           <Link
             href="/all-equipment"
-            className="group inline-flex items-center gap-3 rounded-full bg-[#442719] px-7 py-4 text-sm font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-[#ea580c] hover:shadow-xl dark:bg-orange-600 dark:hover:bg-orange-500"
+            className="group inline-flex items-center gap-3 rounded-full bg-primary px-7 py-4 text-sm font-bold text-primary-foreground shadow-lg transition-all duration-300 hover:-translate-y-1 hover:opacity-85 hover:shadow-xl"
           >
             Explore All Equipment
 

@@ -1,15 +1,9 @@
+"use client"
 
-"use client";
+import { useCallback, useEffect, useMemo, useState } from "react"
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import Link from "next/link";
-import Image from "next/image";
+import Link from "next/link"
+import Image from "next/image"
 
 import {
   Package,
@@ -22,63 +16,55 @@ import {
   RotateCcw,
   CreditCard,
   FlaskConical,
-} from "lucide-react";
+} from "lucide-react"
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth"
 
-import {
-  getMyRentals,
-  type Rental,
-} from "@/services/rental.service";
+import { getMyRentals, type Rental } from "@/services/rental.service"
 
 // Equipment interface
 interface RentalEquipment {
-  _id: string;
-  name: string;
-  image: string;
-  category: string;
-  location: string;
-  pricePerDay: number;
+  _id: string
+  name: string
+  image: string
+  category: string
+  location: string
+  pricePerDay: number
 }
 
 // Rental interface
 interface RentalWithEquipment extends Rental {
-  equipment?: RentalEquipment;
+  equipment?: RentalEquipment
 }
 
 // Format Date
 const formatDate = (date: string) => {
-  const parsedDate = new Date(date);
+  const parsedDate = new Date(date)
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "Invalid date";
+    return "Invalid date"
   }
 
   return parsedDate.toLocaleDateString("en-BD", {
     day: "numeric",
     month: "short",
     year: "numeric",
-  });
-};
+  })
+}
 
 // Format Price
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("en-BD").format(price);
-};
+  return new Intl.NumberFormat("en-BD").format(price)
+}
 
 export default function MyRentalsPage() {
-  const {
-    user,
-    loading: authLoading,
-    isAuthenticated,
-    isRenter,
-  } = useAuth();
+  const { user, loading: authLoading, isAuthenticated, isRenter } = useAuth()
 
-  const [rentals, setRentals] = useState<RentalWithEquipment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [rentals, setRentals] = useState<RentalWithEquipment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState("")
 
   // ==========================================
   // FETCH CUSTOMER BOOKINGS
@@ -86,76 +72,77 @@ export default function MyRentalsPage() {
 
   const fetchRentals = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
-      const result = await getMyRentals();
+      const result = await getMyRentals()
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(result.message)
       }
 
       // Backend returns paid bookings only.
-      setRentals(result.data);
+      setRentals(result.data)
     } catch (error: unknown) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to load your bookings."
-      );
+        error instanceof Error ? error.message : "Failed to load your bookings."
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    if (authLoading) return;
+    let isActive = true
 
-    if (!isAuthenticated || !isRenter) {
-      setLoading(false);
-      return;
+    Promise.resolve().then(() => {
+      if (!isActive) return
+
+      if (!isAuthenticated || !isRenter) {
+        setLoading(false)
+        return
+      }
+
+      void fetchRentals()
+    })
+
+    return () => {
+      isActive = false
     }
-
-    void fetchRentals();
-  }, [authLoading, isAuthenticated, isRenter, fetchRentals]);
+  }, [authLoading, isAuthenticated, isRenter, fetchRentals])
 
   // ==========================================
   // SEARCH BOOKINGS
   // ==========================================
 
   const filteredRentals = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
+    const searchValue = search.trim().toLowerCase()
 
     return rentals.filter((rental) => {
-      const equipmentName = rental.equipment?.name ?? "";
-      const category = rental.equipment?.category ?? "";
-      const location = rental.equipment?.location ?? "";
+      const equipmentName = rental.equipment?.name ?? ""
+      const category = rental.equipment?.category ?? ""
+      const location = rental.equipment?.location ?? ""
 
-      return [
-        equipmentName,
-        category,
-        location,
-        rental.paymentMethod,
-      ].some((value) =>
-        value.toLowerCase().includes(searchValue)
-      );
-    });
-  }, [rentals, search]);
+      return [equipmentName, category, location, rental.paymentMethod].some(
+        (value) => value.toLowerCase().includes(searchValue)
+      )
+    })
+  }, [rentals, search])
 
   // ==========================================
   // BOOKING SUMMARY
   // ==========================================
 
-  const totalBookings = rentals.length;
+  const totalBookings = rentals.length
 
   const paidBookings = rentals.filter(
     (rental) => rental.paymentStatus === "paid"
-  ).length;
+  ).length
 
   const totalSpent = rentals.reduce(
     (total, rental) => total + rental.totalPrice,
     0
-  );
+  )
 
   // ==========================================
   // LOADING
@@ -165,17 +152,14 @@ export default function MyRentalsPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2
-            className="mx-auto animate-spin text-[#ea580c]"
-            size={36}
-          />
+          <Loader2 className="mx-auto animate-spin text-[#ea580c]" size={36} />
 
           <p className="mt-3 text-sm text-[#9b8a7e]">
             Loading your bookings...
           </p>
         </div>
       </div>
-    );
+    )
   }
 
   // ==========================================
@@ -185,10 +169,7 @@ export default function MyRentalsPage() {
   if (!isAuthenticated || !isRenter) {
     return (
       <div className="rounded-2xl border border-[#eee4da] bg-white px-5 py-16 text-center">
-        <Package
-          className="mx-auto text-[#ea580c]"
-          size={42}
-        />
+        <Package className="mx-auto text-[#ea580c]" size={42} />
 
         <h2 className="mt-4 text-xl font-bold text-[#442719]">
           Renter Access Required
@@ -205,7 +186,7 @@ export default function MyRentalsPage() {
           Login
         </Link>
       </div>
-    );
+    )
   }
 
   // ==========================================
@@ -218,7 +199,7 @@ export default function MyRentalsPage() {
 
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#ea580c]">
+          <p className="text-sm font-semibold tracking-wider text-[#ea580c] uppercase">
             Customer Dashboard
           </p>
 
@@ -244,9 +225,7 @@ export default function MyRentalsPage() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <p className="text-sm text-[#9b8a7e]">
-            Total Bookings
-          </p>
+          <p className="text-sm text-[#9b8a7e]">Total Bookings</p>
 
           <h2 className="mt-2 text-3xl font-bold text-[#442719]">
             {totalBookings}
@@ -254,9 +233,7 @@ export default function MyRentalsPage() {
         </div>
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <p className="text-sm text-[#9b8a7e]">
-            Paid Bookings
-          </p>
+          <p className="text-sm text-[#9b8a7e]">Paid Bookings</p>
 
           <h2 className="mt-2 text-3xl font-bold text-green-600">
             {paidBookings}
@@ -264,9 +241,7 @@ export default function MyRentalsPage() {
         </div>
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <p className="text-sm text-[#9b8a7e]">
-            Total Amount Spent
-          </p>
+          <p className="text-sm text-[#9b8a7e]">Total Amount Spent</p>
 
           <h2 className="mt-2 text-3xl font-bold text-[#ea580c]">
             ৳{formatPrice(totalSpent)}
@@ -278,9 +253,7 @@ export default function MyRentalsPage() {
 
       <section className="flex flex-col gap-4 rounded-2xl border border-[#eee4da] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-bold text-[#442719]">
-            Booking History
-          </h2>
+          <h2 className="font-bold text-[#442719]">Booking History</h2>
 
           <p className="mt-1 text-sm text-[#9b8a7e]">
             Your successfully paid equipment bookings.
@@ -376,9 +349,7 @@ export default function MyRentalsPage() {
 
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <div>
-                      <p className="text-xs text-[#9b8a7e]">
-                        Rental Period
-                      </p>
+                      <p className="text-xs text-[#9b8a7e]">Rental Period</p>
 
                       <p className="mt-1 font-medium text-[#442719]">
                         {formatDate(rental.startDate)} -{" "}
@@ -387,9 +358,7 @@ export default function MyRentalsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#9b8a7e]">
-                        Total Days
-                      </p>
+                      <p className="text-xs text-[#9b8a7e]">Total Days</p>
 
                       <p className="mt-1 font-medium text-[#442719]">
                         {rental.totalDays} days
@@ -397,9 +366,7 @@ export default function MyRentalsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#9b8a7e]">
-                        Quantity
-                      </p>
+                      <p className="text-xs text-[#9b8a7e]">Quantity</p>
 
                       <p className="mt-1 font-medium text-[#442719]">
                         {rental.quantity} items
@@ -407,9 +374,7 @@ export default function MyRentalsPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs text-[#9b8a7e]">
-                        Total Price
-                      </p>
+                      <p className="text-xs text-[#9b8a7e]">Total Price</p>
 
                       <p className="mt-1 font-bold text-[#ea580c]">
                         ৳{formatPrice(rental.totalPrice)}
@@ -490,9 +455,7 @@ export default function MyRentalsPage() {
       {/* Booking Confirmation */}
 
       <section className="rounded-2xl border border-[#eee4da] bg-white p-6">
-        <h2 className="mb-5 font-bold text-[#442719]">
-          Booking Confirmation
-        </h2>
+        <h2 className="mb-5 font-bold text-[#442719]">Booking Confirmation</h2>
 
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -521,5 +484,5 @@ export default function MyRentalsPage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

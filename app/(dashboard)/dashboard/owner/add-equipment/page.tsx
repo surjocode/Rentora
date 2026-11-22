@@ -1,8 +1,10 @@
-"use client"
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+"use client";
+
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   PackagePlus,
   ImagePlus,
@@ -11,16 +13,16 @@ import {
   Info,
   X,
   Loader2,
-} from "lucide-react"
+} from "lucide-react";
+
 import {
   addEquipment,
   uploadEquipmentImage,
   type CreateEquipmentData,
-} from "@/services/equipment.service"
-import Image from "next/image"
+} from "@/services/equipment.service";
 
 export default function AddEquipmentPage() {
-  const router = useRouter()
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,28 +36,22 @@ export default function AddEquipmentPage() {
     location: "",
     description: "",
     termsAndConditions: "",
-  })
+  });
 
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  // Generate image preview
+  // Cleanup image preview URL
   useEffect(() => {
-    if (!imageFile) {
-      setImagePreview("")
-      return
-    }
-
-    const previewUrl = URL.createObjectURL(imageFile)
-    setImagePreview(previewUrl)
+    if (!imagePreview) return;
 
     return () => {
-      URL.revokeObjectURL(previewUrl)
-    }
-  }, [imageFile])
+      URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   // Handle input changes
   const handleChange = (
@@ -63,39 +59,47 @@ export default function AddEquipmentPage() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    const { name, value } = event.target
+    const { name, value } = event.target;
 
     setFormData((previous) => ({
       ...previous,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   // Handle image selection
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
 
-    if (!file) return
+    if (!file) return;
 
-    setError("")
-    setSuccess("")
+    setError("");
+    setSuccess("");
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
 
     if (!allowedTypes.includes(file.type)) {
-      setError("Please select a JPG, PNG, WEBP or GIF image.")
-      event.target.value = ""
-      return
+      setError("Please select a JPG, PNG, WEBP or GIF image.");
+      event.target.value = "";
+      return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image size cannot exceed 5 MB.")
-      event.target.value = ""
-      return
+      setError("Image size cannot exceed 5 MB.");
+      event.target.value = "";
+      return;
     }
 
-    setImageFile(file)
-  }
+    const previewUrl = URL.createObjectURL(file);
+
+    setImageFile(file);
+    setImagePreview(previewUrl);
+  };
 
   // Reset form
   const handleReset = () => {
@@ -111,52 +115,52 @@ export default function AddEquipmentPage() {
       location: "",
       description: "",
       termsAndConditions: "",
-    })
+    });
 
-    setImageFile(null)
-    setImagePreview("")
-    setError("")
-    setSuccess("")
+    setImageFile(null);
+    setImagePreview("");
+    setError("");
+    setSuccess("");
 
     const fileInput = document.getElementById(
       "equipmentImage"
-    ) as HTMLInputElement | null
+    ) as HTMLInputElement | null;
 
     if (fileInput) {
-      fileInput.value = ""
+      fileInput.value = "";
     }
-  }
+  };
 
   // Submit equipment
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    setError("")
-    setSuccess("")
+    setError("");
+    setSuccess("");
 
     if (!imageFile) {
-      setError("Please select an equipment image.")
-      return
+      setError("Please select an equipment image.");
+      return;
     }
 
-    const price = Number(formData.pricePerDay)
-    const quantity = Number(formData.availableQuantity)
+    const price = Number(formData.pricePerDay);
+    const quantity = Number(formData.availableQuantity);
 
     if (!Number.isFinite(price) || price <= 0) {
-      setError("Please enter a valid rental price.")
-      return
+      setError("Please enter a valid rental price.");
+      return;
     }
 
     if (!Number.isInteger(quantity) || quantity < 1) {
-      setError("Available quantity must be at least 1.")
-      return
+      setError("Available quantity must be at least 1.");
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Step 1: Upload image to ImgBB
-      const imageUrl = await uploadEquipmentImage(imageFile)
+      const imageUrl = await uploadEquipmentImage(imageFile);
 
       // Step 2: Prepare equipment data
       const equipmentData: CreateEquipmentData = {
@@ -172,34 +176,34 @@ export default function AddEquipmentPage() {
         description: formData.description.trim(),
         termsAndConditions: formData.termsAndConditions.trim(),
         image: imageUrl,
-      }
+      };
 
       // Step 3: Save equipment to MongoDB
-      const response = await addEquipment(equipmentData)
+      const response = await addEquipment(equipmentData);
 
       if (!response.success) {
-        throw new Error(response.message || "Failed to add equipment.")
+        throw new Error(response.message || "Failed to add equipment.");
       }
 
       setSuccess(
         "Equipment submitted successfully! It is waiting for admin approval."
-      )
+      );
 
       // Step 4: Redirect to My Equipment
       setTimeout(() => {
-        router.push("/dashboard/owner/my-equipment")
-        router.refresh()
-      }, 1200)
-    } catch (err) {
+        router.push("/dashboard/owner/my-equipment");
+        router.refresh();
+      }, 1200);
+    } catch (err: unknown) {
       setError(
         err instanceof Error
           ? err.message
           : "Something went wrong. Please try again."
-      )
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
@@ -598,13 +602,14 @@ export default function AddEquipmentPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setImageFile(null)
+                  setImageFile(null);
+                  setImagePreview("");
 
                   const input = document.getElementById(
                     "equipmentImage"
-                  ) as HTMLInputElement | null
+                  ) as HTMLInputElement | null;
 
-                  if (input) input.value = ""
+                  if (input) input.value = "";
                 }}
                 disabled={loading}
                 className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
@@ -647,5 +652,5 @@ export default function AddEquipmentPage() {
         </form>
       </section>
     </div>
-  )
+  );
 }

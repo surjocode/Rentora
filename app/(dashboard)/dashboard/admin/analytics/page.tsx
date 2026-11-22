@@ -8,7 +8,6 @@ import {
   CalendarCheck,
   Wallet,
   TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   Activity,
 } from "lucide-react";
@@ -55,7 +54,7 @@ export default function AdminAnalyticsPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[#9b8a7e]">
-            Monitor Rentora's overall performance and activity.
+            Monitor Rentora&apos;s overall performance and activity.
           </p>
         </div>
 

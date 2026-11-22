@@ -1,6 +1,7 @@
 
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ClipboardList,
@@ -37,9 +38,7 @@ export default function ManageRentalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ==========================================
   // FETCH ALL PAID RENTALS
-  // ==========================================
 
   const fetchRentals = useCallback(async () => {
     try {
@@ -67,13 +66,23 @@ export default function ManageRentalsPage() {
     }
   }, []);
 
+  // INITIAL DATA FETCHING
+
   useEffect(() => {
-    void fetchRentals();
+    let isActive = true;
+
+    Promise.resolve().then(() => {
+      if (isActive) {
+        void fetchRentals();
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, [fetchRentals]);
 
-  // ==========================================
   // DATE FORMATTER
-  // ==========================================
 
   const formatDate = (date: string) => {
     const parsedDate = new Date(date);
@@ -89,9 +98,7 @@ export default function ManageRentalsPage() {
     });
   };
 
-  // ==========================================
   // PAYMENT METHOD
-  // ==========================================
 
   const getPaymentMethod = (rental: AdminRental) => {
     return rental.paymentMethod === "demo"
@@ -99,9 +106,7 @@ export default function ManageRentalsPage() {
       : "Stripe Payment";
   };
 
-  // ==========================================
   // SUMMARY CALCULATIONS
-  // ==========================================
 
   const totalRevenue = useMemo(
     () =>
@@ -135,9 +140,7 @@ export default function ManageRentalsPage() {
     }).length;
   }, [rentals]);
 
-  // ==========================================
   // SEARCH AND DATE FILTER
-  // ==========================================
 
   const filteredRentals = useMemo(() => {
     const searchValue = search.trim().toLowerCase();
@@ -157,18 +160,18 @@ export default function ManageRentalsPage() {
       let matchesDate = true;
 
       if (dateFilter === "Upcoming") {
-        matchesDate = endDate >= now;
+        matchesDate =
+          !Number.isNaN(endDate.getTime()) && endDate >= now;
       } else if (dateFilter === "Past") {
-        matchesDate = endDate < now;
+        matchesDate =
+          !Number.isNaN(endDate.getTime()) && endDate < now;
       }
 
       return matchesSearch && matchesDate;
     });
   }, [rentals, search, dateFilter]);
 
-  // ==========================================
   // SUMMARY CARDS
-  // ==========================================
 
   const summaryCards = [
     {
@@ -197,9 +200,7 @@ export default function ManageRentalsPage() {
     },
   ];
 
-  // ==========================================
   // RENDER
-  // ==========================================
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -287,6 +288,7 @@ export default function ManageRentalsPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search rentals..."
+              aria-label="Search rentals"
               className="w-full bg-transparent text-sm outline-none sm:w-48"
             />
           </div>
@@ -297,6 +299,7 @@ export default function ManageRentalsPage() {
             <select
               value={dateFilter}
               onChange={(event) => setDateFilter(event.target.value)}
+              aria-label="Filter rentals by date"
               className="bg-transparent py-2.5 text-sm text-[#6b5a50] outline-none"
             >
               <option value="All">All Rentals</option>
@@ -379,11 +382,14 @@ export default function ManageRentalsPage() {
 
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fff0e5] text-[#ea580c]">
+                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fff0e5] text-[#ea580c]">
                           {rental.equipment?.image ? (
-                            <img
+                            <Image
                               src={rental.equipment.image}
                               alt={rental.equipment.name || "Equipment"}
+                              width={44}
+                              height={44}
+                              unoptimized
                               className="h-full w-full object-cover"
                             />
                           ) : (
@@ -580,11 +586,14 @@ export default function ManageRentalsPage() {
               {/* Equipment Information */}
 
               <div className="flex items-center gap-4 rounded-xl bg-[#faf7f2] p-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fff0e5] text-[#ea580c]">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#fff0e5] text-[#ea580c]">
                   {selectedRental.equipment?.image ? (
-                    <img
+                    <Image
                       src={selectedRental.equipment.image}
                       alt={selectedRental.equipment.name || "Equipment"}
+                      width={56}
+                      height={56}
+                      unoptimized
                       className="h-full w-full object-cover"
                     />
                   ) : (

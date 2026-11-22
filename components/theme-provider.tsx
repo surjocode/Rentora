@@ -47,6 +47,7 @@ function ThemeHotkey() {
         event.metaKey ||
         event.ctrlKey ||
         event.altKey ||
+        typeof event.key !== "string" ||
         event.key.toLowerCase() !== "d" ||
         isTypingTarget(event.target)
       ) {

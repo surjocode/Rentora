@@ -80,12 +80,12 @@ export default function BenefitsSection() {
   return (
     <section
       id="about"
-      className="relative overflow-hidden bg-[#faf7f2] px-5 py-20 transition-colors duration-300 dark:bg-[#17120f] sm:px-6 lg:px-8 lg:py-24"
+      className="relative overflow-hidden bg-background px-5 py-20 transition-colors duration-300 sm:px-6 lg:px-8 lg:py-24"
     >
       {/* Background Decorations */}
-      <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full bg-orange-100/60 blur-3xl dark:bg-orange-500/10" />
+      <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full bg-secondary/70 blur-3xl" />
 
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-amber-100/50 blur-3xl dark:bg-amber-500/10" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-muted/70 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
         {/* Section Heading */}
@@ -96,19 +96,19 @@ export default function BenefitsSection() {
           transition={{ duration: 0.6 }}
           className="mx-auto mb-16 max-w-2xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 dark:border-orange-400/20 dark:bg-orange-500/10 dark:text-orange-400">
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm font-semibold text-foreground">
             <Sparkles size={16} />
             Why Choose Rentora?
           </span>
 
-          <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-[#442719] dark:text-[#f5e9dc] sm:text-4xl lg:text-5xl">
+          <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             Everything You Need,
-            <span className="mt-2 block text-orange-600 dark:text-orange-400">
+            <span className="mt-2 block text-muted-foreground">
               All in One Place
             </span>
           </h2>
 
-          <p className="mt-5 text-base leading-8 text-gray-600 dark:text-gray-400 sm:text-lg">
+          <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">
             We make equipment rental simple, affordable, and convenient.
             Discover how Rentora helps you get more done with less effort.
           </p>
@@ -131,39 +131,40 @@ export default function BenefitsSection() {
                 variants={itemVariants}
                 className="group relative"
               >
-                <div className="relative flex h-full min-h-[270px] flex-col overflow-hidden rounded-3xl border border-[#eee5dc] bg-white p-7 transition-all duration-300 hover:-translate-y-2 hover:border-orange-300 hover:shadow-xl dark:border-white/10 dark:bg-[#241c17] dark:hover:border-orange-500/40 sm:p-8">
+                <div className="relative flex h-full min-h-[270px] flex-col overflow-hidden rounded-3xl border border-border bg-card p-7 transition-all duration-300 hover:-translate-y-2 hover:border-ring hover:shadow-xl sm:p-8">
+
                   {/* Decorative Number */}
-                  <span className="absolute -right-2 -top-5 text-8xl font-black text-[#442719]/[0.04] transition-colors duration-300 group-hover:text-orange-500/10 dark:text-white/[0.04] dark:group-hover:text-orange-400/10">
+                  <span className="absolute -right-2 -top-5 text-8xl font-black text-foreground/[0.04] transition-colors duration-300 group-hover:text-foreground/[0.09]">
                     {String(index + 1).padStart(2, "0")}
                   </span>
 
                   {/* Icon */}
-                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-[#442719] text-orange-400 shadow-md shadow-[#442719]/10 transition-all duration-300 group-hover:rotate-3 group-hover:bg-orange-600 group-hover:text-white dark:bg-[#3a2a20]">
+                  <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md transition-all duration-300 group-hover:rotate-3 group-hover:bg-secondary group-hover:text-foreground">
                     <Icon size={29} strokeWidth={1.8} />
                   </div>
 
                   {/* Content */}
-                  <h3 className="relative mt-7 text-xl font-bold text-[#442719] transition-colors duration-300 group-hover:text-orange-600 dark:text-[#f5e9dc] dark:group-hover:text-orange-400">
+                  <h3 className="relative mt-7 text-xl font-bold text-foreground transition-colors duration-300 group-hover:text-muted-foreground">
                     {benefit.title}
                   </h3>
 
-                  <p className="relative mt-3 text-sm leading-7 text-gray-600 dark:text-gray-400">
+                  <p className="relative mt-3 text-sm leading-7 text-muted-foreground">
                     {benefit.description}
                   </p>
 
                   {/* Bottom Label */}
                   <div className="mt-auto flex items-center justify-between pt-7">
-                    <span className="text-xs font-bold tracking-widest text-orange-500 dark:text-orange-400">
+                    <span className="text-xs font-bold tracking-widest text-muted-foreground">
                       BENEFIT {String(index + 1).padStart(2, "0")}
                     </span>
 
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#faf7f2] text-[#442719] transition-all duration-300 group-hover:bg-orange-600 group-hover:text-white dark:bg-[#342820] dark:text-[#f5e9dc] dark:group-hover:bg-orange-500">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-foreground transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
                       <ArrowUpRight size={17} />
                     </span>
                   </div>
 
                   {/* Bottom Accent */}
-                  <div className="absolute bottom-0 left-0 h-1 w-0 rounded-full bg-orange-500 transition-all duration-500 group-hover:w-full" />
+                  <div className="absolute bottom-0 left-0 h-1 w-0 rounded-full bg-foreground transition-all duration-500 group-hover:w-full" />
                 </div>
               </motion.div>
             );
@@ -178,11 +179,11 @@ export default function BenefitsSection() {
           transition={{ duration: 0.6 }}
           className="mt-14 text-center"
         >
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-muted-foreground">
             Rent smarter. Save more. Make every project count.
           </p>
 
-          <p className="mt-2 text-lg font-extrabold text-[#442719] dark:text-[#f5e9dc]">
+          <p className="mt-2 text-lg font-extrabold text-foreground">
             That&apos;s the Rentora experience.
           </p>
         </motion.div>

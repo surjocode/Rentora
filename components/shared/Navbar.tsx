@@ -4,7 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   Menu,
   X,
@@ -27,24 +27,25 @@ const navLinks = [
   { name: "Contact", href: "/#contact" },
 ];
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export default function Navbar() {
   const pathname = usePathname();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 
   const { resolvedTheme, setTheme } = useTheme();
 
   const { data: session, isPending } = authClient.useSession();
   const isLoggedIn = Boolean(session?.user);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname]);
 
   const isDark = mounted && resolvedTheme === "dark";
 
@@ -67,8 +68,8 @@ export default function Navbar() {
     transition-all duration-300 ease-in-out
     ${
       isActive(href)
-        ? "bg-[#442719] text-white shadow-md dark:bg-[#ea580c]"
-        : "text-[#442719] hover:bg-[#ea580c]/10 hover:text-[#ea580c] dark:text-[#f5e9dc] dark:hover:bg-[#ea580c]/15 dark:hover:text-[#fb923c]"
+        ? "bg-primary text-primary-foreground shadow-md"
+        : "text-foreground hover:bg-secondary hover:text-foreground"
     }
   `;
 
@@ -77,8 +78,8 @@ export default function Navbar() {
     text-sm font-semibold transition-all duration-300
     ${
       isActive(href)
-        ? "bg-[#442719] text-white shadow-md dark:bg-[#ea580c]"
-        : "text-[#442719] hover:bg-[#ea580c]/10 hover:text-[#ea580c] dark:text-[#f5e9dc] dark:hover:bg-white/5 dark:hover:text-[#fb923c]"
+        ? "bg-primary text-primary-foreground shadow-md"
+        : "text-foreground hover:bg-secondary hover:text-foreground"
     }
   `;
 
@@ -87,29 +88,27 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#442719]/10 bg-[#faf7f2]/90 shadow-sm backdrop-blur-2xl transition-colors duration-300 dark:border-white/10 dark:bg-[#101d19]/90">
-
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 shadow-sm backdrop-blur-2xl transition-colors duration-300">
       <nav className="mx-auto flex h-[82px] max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
-
         {/* Logo */}
-       {/* Logo */}
-<Link
-  href="/"
-  aria-label="Rentora Home"
-  className="group flex h-16 w-48 shrink-0 items-center justify-start transition-transform duration-300 hover:scale-[1.03] sm:w-52"
->
-  <Image
-    src="/images/equipment-logo.png"
-    alt="Rentora Logo"
-    width={208}
-    height={80}
-    priority
-    className="h-full w-full object-contain object-left"
-  />
-</Link>
+        <Link
+          href="/"
+          aria-label="Rentora Home"
+          className="group flex h-16 w-48 shrink-0 items-center justify-start transition-transform duration-300 hover:scale-[1.03] sm:w-52"
+          onClick={closeMenu}
+        >
+          <Image
+            src="/images/equipment-logo.png"
+            alt="Rentora Logo"
+            width={208}
+            height={80}
+            priority
+            className="h-full w-full object-contain object-left"
+          />
+        </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden items-center gap-1 rounded-full border border-[#442719]/10 bg-white/70 p-1.5 shadow-sm lg:flex dark:border-white/10 dark:bg-white/[0.04]">
+        <div className="hidden items-center gap-1 rounded-full border border-border bg-card p-1.5 shadow-sm lg:flex">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -123,13 +122,12 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
-
           {/* Search */}
           <Link
             href="/all-equipment"
             aria-label="Search equipment"
             title="Search Equipment"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-[#442719] transition-all duration-300 hover:bg-[#ea580c]/10 hover:text-[#ea580c] dark:text-[#f5e9dc] dark:hover:bg-white/10 dark:hover:text-[#fb923c]"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-all duration-300 hover:bg-secondary"
           >
             <Search size={19} />
           </Link>
@@ -144,7 +142,7 @@ export default function Navbar() {
                 : "Toggle theme"
             }
             title="Toggle Theme"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#442719]/10 bg-white/70 text-[#442719] transition-all duration-300 hover:border-[#ea580c]/30 hover:bg-[#ea580c]/10 hover:text-[#ea580c] dark:border-white/10 dark:bg-white/5 dark:text-[#f5e9dc] dark:hover:bg-white/10 dark:hover:text-[#fb923c]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all duration-300 hover:bg-secondary"
           >
             {mounted && isDark ? (
               <Sun size={19} className="transition-transform duration-300" />
@@ -159,7 +157,7 @@ export default function Navbar() {
               {isLoggedIn ? (
                 <Link
                   href="/dashboard"
-                  className="ml-2 flex items-center gap-2 rounded-full bg-[#442719] px-5 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ea580c] hover:shadow-lg dark:bg-[#ea580c] dark:hover:bg-[#c2410c]"
+                  className="ml-2 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:opacity-85 hover:shadow-lg"
                 >
                   <LayoutDashboard size={17} />
                   Dashboard
@@ -168,7 +166,7 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="ml-2 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-[#442719] transition-all duration-300 hover:bg-[#ea580c]/10 hover:text-[#ea580c] dark:text-[#f5e9dc] dark:hover:text-[#fb923c]"
+                    className="ml-2 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-bold text-foreground transition-all duration-300 hover:bg-secondary"
                   >
                     <LogIn size={17} />
                     Login
@@ -176,7 +174,7 @@ export default function Navbar() {
 
                   <Link
                     href="/register"
-                    className="flex items-center gap-2 rounded-full bg-[#ea580c] px-5 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#c2410c] hover:shadow-lg"
+                    className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:opacity-85 hover:shadow-lg"
                   >
                     <UserPlus size={17} />
                     Get Started
@@ -190,7 +188,6 @@ export default function Navbar() {
 
         {/* Mobile Actions */}
         <div className="flex items-center gap-2 lg:hidden">
-
           {/* Mobile Theme Toggle */}
           <button
             type="button"
@@ -200,13 +197,9 @@ export default function Navbar() {
                 ? `Switch to ${isDark ? "light" : "dark"} mode`
                 : "Toggle theme"
             }
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#442719]/10 bg-white/70 text-[#442719] transition-all duration-300 hover:bg-[#ea580c]/10 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-all duration-300 hover:bg-secondary"
           >
-            {mounted && isDark ? (
-              <Sun size={20} />
-            ) : (
-              <Moon size={20} />
-            )}
+            {mounted && isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
           {/* Mobile Menu Toggle */}
@@ -215,7 +208,8 @@ export default function Navbar() {
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={isMenuOpen}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#442719] text-white shadow-sm transition-all duration-300 hover:bg-[#ea580c] dark:bg-[#ea580c] dark:hover:bg-[#c2410c]"
+            aria-controls="mobile-navigation"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all duration-300 hover:opacity-85"
           >
             {isMenuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
@@ -224,6 +218,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <div
+        id="mobile-navigation"
         className={`grid overflow-hidden transition-all duration-300 ease-in-out lg:hidden ${
           isMenuOpen
             ? "grid-rows-[1fr] opacity-100"
@@ -231,8 +226,7 @@ export default function Navbar() {
         }`}
       >
         <div className="min-h-0">
-          <div className="border-t border-[#442719]/10 bg-[#faf7f2] px-4 pb-6 pt-4 dark:border-white/10 dark:bg-[#101d19]">
-
+          <div className="border-t border-border bg-background px-4 pb-6 pt-4">
             {/* Mobile Navigation Links */}
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
@@ -250,12 +244,12 @@ export default function Navbar() {
 
             {/* Mobile Authentication */}
             {!isPending && (
-              <div className="mt-4 border-t border-[#442719]/10 pt-4 dark:border-white/10">
+              <div className="mt-4 border-t border-border pt-4">
                 {isLoggedIn ? (
                   <Link
                     href="/dashboard"
                     onClick={closeMenu}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-[#442719] px-5 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-[#ea580c] dark:bg-[#ea580c] dark:hover:bg-[#c2410c]"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-md transition-all duration-300 hover:opacity-85"
                   >
                     <LayoutDashboard size={18} />
                     Dashboard
@@ -265,7 +259,7 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={closeMenu}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-[#442719]/15 px-4 py-3.5 text-sm font-bold text-[#442719] transition-all duration-300 hover:bg-[#ea580c]/10 dark:border-white/15 dark:text-white"
+                      className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-3.5 text-sm font-bold text-foreground transition-all duration-300 hover:bg-secondary"
                     >
                       <LogIn size={17} />
                       Login
@@ -274,7 +268,7 @@ export default function Navbar() {
                     <Link
                       href="/register"
                       onClick={closeMenu}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#ea580c] px-4 py-3.5 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-[#c2410c]"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3.5 text-sm font-bold text-primary-foreground shadow-md transition-all duration-300 hover:opacity-85"
                     >
                       <UserPlus size={17} />
                       Register
@@ -288,7 +282,7 @@ export default function Navbar() {
             <Link
               href="/all-equipment"
               onClick={closeMenu}
-              className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-[#ea580c]/10 px-4 py-3.5 text-sm font-bold text-[#ea580c] transition-all duration-300 hover:bg-[#ea580c]/20 dark:bg-[#ea580c]/15 dark:hover:bg-[#ea580c]/25"
+              className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-3.5 text-sm font-bold text-foreground transition-all duration-300 hover:opacity-80"
             >
               <Search size={17} />
               Explore All Equipment

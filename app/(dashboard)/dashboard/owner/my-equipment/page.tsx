@@ -84,7 +84,7 @@ export default function MyEquipmentPage() {
       }
 
       setEquipment(result.data);
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -97,19 +97,27 @@ export default function MyEquipmentPage() {
 
   // Check authentication and fetch equipment
   useEffect(() => {
-    if (authLoading) return;
+    let isActive = true;
 
-    if (!isAuthenticated) {
-      router.replace("/login");
-      return;
-    }
+    Promise.resolve().then(() => {
+      if (!isActive || authLoading) return;
 
-    if (!isOwner) {
-      router.replace("/dashboard");
-      return;
-    }
+      if (!isAuthenticated) {
+        router.replace("/login");
+        return;
+      }
 
-    void fetchEquipment();
+      if (!isOwner) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      void fetchEquipment();
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, [
     authLoading,
     isAuthenticated,
@@ -210,7 +218,7 @@ export default function MyEquipmentPage() {
       setFormData(initialFormData);
 
       await fetchEquipment();
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -242,7 +250,7 @@ export default function MyEquipmentPage() {
       setEquipment((previous) =>
         previous.filter((item) => item._id !== id)
       );
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -272,7 +280,6 @@ export default function MyEquipmentPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-
       {/* Page Heading */}
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -320,9 +327,7 @@ export default function MyEquipmentPage() {
             key={item.title}
             className="rounded-2xl border border-[#eee4da] bg-white p-5"
           >
-            <p className="text-sm text-[#9b8a7e]">
-              {item.title}
-            </p>
+            <p className="text-sm text-[#9b8a7e]">{item.title}</p>
 
             <h2 className={`mt-2 text-3xl font-bold ${item.color}`}>
               {item.value}
@@ -333,13 +338,10 @@ export default function MyEquipmentPage() {
 
       {/* Equipment Management */}
       <section className="overflow-hidden rounded-2xl border border-[#eee4da] bg-white">
-
         {/* Search and Filter */}
         <div className="flex flex-col gap-4 border-b border-[#eee4da] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-bold text-[#442719]">
-              Equipment Listings
-            </h2>
+            <h2 className="font-bold text-[#442719]">Equipment Listings</h2>
 
             <p className="mt-1 text-sm text-[#9b8a7e]">
               View and manage your equipment listings.
@@ -347,7 +349,6 @@ export default function MyEquipmentPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-
             {/* Search */}
             <div className="flex items-center gap-2 rounded-xl border border-[#eee4da] px-3 py-2.5">
               <Search size={18} className="text-[#9b8a7e]" />
@@ -382,7 +383,6 @@ export default function MyEquipmentPage() {
         {/* Equipment Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[750px] text-left">
-
             <thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#9b8a7e]">
               <tr>
                 <th className="px-5 py-4">Equipment</th>
@@ -437,7 +437,6 @@ export default function MyEquipmentPage() {
 
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">
-
                         {/* View */}
                         <Link
                           href={`/equipment/${item._id}`}
@@ -517,7 +516,6 @@ export default function MyEquipmentPage() {
       {editingEquipment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4">
           <div className="my-auto w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
-
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-[#442719]">
@@ -540,7 +538,6 @@ export default function MyEquipmentPage() {
             </div>
 
             <form onSubmit={handleUpdate} className="space-y-4">
-
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#442719]">
                   Equipment Name
@@ -583,7 +580,10 @@ export default function MyEquipmentPage() {
                     min="1"
                     value={formData.pricePerDay}
                     onChange={(event) =>
-                      setFormData({ ...formData, pricePerDay: event.target.value })
+                      setFormData({
+                        ...formData,
+                        pricePerDay: event.target.value,
+                      })
                     }
                     className="w-full rounded-xl border border-[#eee4da] px-4 py-3 text-sm outline-none focus:border-[#ea580c]"
                   />

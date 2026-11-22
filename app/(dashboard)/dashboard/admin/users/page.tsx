@@ -1,7 +1,6 @@
+"use client"
 
-"use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   Users,
   Search,
@@ -17,67 +16,65 @@ import {
   Loader2,
   RefreshCw,
   Save,
-} from "lucide-react";
+} from "lucide-react"
+import Image from "next/image"
 
-import {
-  getAllUsers,
-  updateUserRole,
-} from "@/services/admin.service";
+import { getAllUsers, updateUserRole } from "@/services/admin.service"
 
-import type { User as ApiUser } from "@/services/user.service";
+import type { User as ApiUser } from "@/services/user.service"
 
-type UserRole = "Customer" | "Owner" | "Admin";
-type BackendRole = "renter" | "owner" | "admin";
+type UserRole = "Customer" | "Owner" | "Admin"
+type BackendRole = "renter" | "owner" | "admin"
 
 interface DisplayUser extends ApiUser {
-  _id: string;
+  _id: string
 }
 
 const roleToDisplay = (role: BackendRole): UserRole => {
   switch (role) {
     case "renter":
-      return "Customer";
+      return "Customer"
     case "owner":
-      return "Owner";
+      return "Owner"
     case "admin":
-      return "Admin";
+      return "Admin"
   }
-};
+}
 
 const displayToRole = (role: UserRole): BackendRole => {
   switch (role) {
     case "Customer":
-      return "renter";
+      return "renter"
     case "Owner":
-      return "owner";
+      return "owner"
     case "Admin":
-      return "admin";
+      return "admin"
   }
-};
+}
 
 export default function ManageUsersPage() {
-  const [users, setUsers] = useState<DisplayUser[]>([]);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("All");
+  const [users, setUsers] = useState<DisplayUser[]>([])
+  const [search, setSearch] = useState("")
+  const [roleFilter, setRoleFilter] = useState("All")
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
-  const [selectedUser, setSelectedUser] = useState<DisplayUser | null>(null);
-  const [editingUser, setEditingUser] = useState<DisplayUser | null>(null);
-  const [newRole, setNewRole] = useState<UserRole>("Customer");
-  const [updating, setUpdating] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<DisplayUser | null>(null)
+  const [editingUser, setEditingUser] = useState<DisplayUser | null>(null)
+  const [newRole, setNewRole] = useState<UserRole>("Customer")
+  const [updating, setUpdating] = useState(false)
 
   const fetchUsers = useCallback(async () => {
     try {
-      setLoading(true);
-      setError("");
+      setLoading(true)
+      setError("")
 
-      const result = await getAllUsers();
+      const result = await getAllUsers()
 
       if (!result.success) {
-        throw new Error(result.message || "Failed to load users.");
+        throw new Error(result.message || "Failed to load users.")
       }
 
       const formattedUsers: DisplayUser[] = result.data
@@ -85,115 +82,144 @@ export default function ManageUsersPage() {
         .map((user) => ({
           ...user,
           _id: user._id as string,
-        }));
+        }))
 
-      setUsers(formattedUsers);
+      setUsers(formattedUsers)
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load users."
-      );
+      setError(err instanceof Error ? err.message : "Failed to load users.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
+    let isActive = true
+
+    Promise.resolve()
+      .then(() => getAllUsers())
+      .then((result) => {
+        if (!isActive) return
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to load users.")
+        }
+
+        const formattedUsers: DisplayUser[] = result.data
+          .filter((user) => typeof user._id === "string")
+          .map((user) => ({
+            ...user,
+            _id: user._id as string,
+          }))
+
+        setUsers(formattedUsers)
+        setError("")
+      })
+      .catch((err: unknown) => {
+        if (!isActive) return
+
+        setError(err instanceof Error ? err.message : "Failed to load users.")
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       const matchesSearch =
         user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase());
+        user.email.toLowerCase().includes(search.toLowerCase())
 
       const matchesRole =
-        roleFilter === "All" ||
-        roleToDisplay(user.role) === roleFilter;
+        roleFilter === "All" || roleToDisplay(user.role) === roleFilter
 
-      return matchesSearch && matchesRole;
-    });
-  }, [users, search, roleFilter]);
+      return matchesSearch && matchesRole
+    })
+  }, [users, search, roleFilter])
 
-  const customers = users.filter((user) => user.role === "renter").length;
-  const owners = users.filter((user) => user.role === "owner").length;
-  const admins = users.filter((user) => user.role === "admin").length;
+  const customers = users.filter((user) => user.role === "renter").length
+  const owners = users.filter((user) => user.role === "owner").length
+  const admins = users.filter((user) => user.role === "admin").length
 
   const getRoleStyle = (role: UserRole) => {
     switch (role) {
       case "Admin":
-        return "bg-purple-50 text-purple-700";
+        return "bg-purple-50 text-purple-700"
       case "Owner":
-        return "bg-orange-50 text-orange-700";
+        return "bg-orange-50 text-orange-700"
       default:
-        return "bg-blue-50 text-blue-700";
+        return "bg-blue-50 text-blue-700"
     }
-  };
+  }
 
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case "Admin":
-        return ShieldCheck;
+        return ShieldCheck
       case "Owner":
-        return BriefcaseBusiness;
+        return BriefcaseBusiness
       default:
-        return UserRound;
+        return UserRound
     }
-  };
+  }
 
   const handleEditRole = (user: DisplayUser) => {
-    setEditingUser(user);
-    setNewRole(roleToDisplay(user.role));
-    setSuccess("");
-    setError("");
-  };
+    setEditingUser(user)
+    setNewRole(roleToDisplay(user.role))
+    setSuccess("")
+    setError("")
+  }
 
   const handleUpdateRole = async () => {
-    if (!editingUser) return;
+    if (!editingUser) return
 
-    const updatedRole = displayToRole(newRole);
+    const updatedRole = displayToRole(newRole)
 
     if (editingUser.role === updatedRole) {
-      setEditingUser(null);
-      return;
+      setEditingUser(null)
+      return
     }
 
     try {
-      setUpdating(true);
-      setError("");
-      setSuccess("");
+      setUpdating(true)
+      setError("")
+      setSuccess("")
 
-      const result = await updateUserRole(editingUser._id, updatedRole);
+      const result = await updateUserRole(editingUser._id, updatedRole)
 
       if (!result.success) {
-        throw new Error(result.message || "Failed to update user role.");
+        throw new Error(result.message || "Failed to update user role.")
       }
 
       setUsers((previousUsers) =>
         previousUsers.map((user) =>
-          user._id === editingUser._id
-            ? { ...user, role: updatedRole }
-            : user
+          user._id === editingUser._id ? { ...user, role: updatedRole } : user
         )
-      );
+      )
 
-      setSuccess(`${editingUser.name}'s role updated successfully.`);
-      setEditingUser(null);
+      setSuccess(`${editingUser.name}'s role updated successfully.`)
+      setEditingUser(null)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to update user role."
-      );
+      )
     } finally {
-      setUpdating(false);
+      setUpdating(false)
     }
-  };
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Page Heading */}
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-[#ea580c]">
+          <p className="text-sm font-semibold tracking-wider text-[#ea580c] uppercase">
             Admin Dashboard
           </p>
 
@@ -260,7 +286,7 @@ export default function ManageUsersPage() {
             color: "bg-purple-50 text-purple-600",
           },
         ].map((item) => {
-          const Icon = item.icon;
+          const Icon = item.icon
 
           return (
             <div
@@ -281,7 +307,7 @@ export default function ManageUsersPage() {
                 {loading ? "..." : item.value}
               </h2>
             </div>
-          );
+          )
         })}
       </section>
 
@@ -290,9 +316,7 @@ export default function ManageUsersPage() {
         {/* Search and Filter */}
         <div className="flex flex-col gap-4 border-b border-[#eee4da] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-bold text-[#442719]">
-              All Registered Users
-            </h2>
+            <h2 className="font-bold text-[#442719]">All Registered Users</h2>
 
             <p className="mt-1 text-sm text-[#9b8a7e]">
               Manage customer, owner and admin accounts.
@@ -342,7 +366,7 @@ export default function ManageUsersPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[850px] text-left">
-            <thead className="bg-[#faf7f2] text-xs uppercase tracking-wider text-[#9b8a7e]">
+            <thead className="bg-[#faf7f2] text-xs tracking-wider text-[#9b8a7e] uppercase">
               <tr>
                 <th className="px-5 py-4">User</th>
                 <th className="px-5 py-4">Role</th>
@@ -355,7 +379,10 @@ export default function ManageUsersPage() {
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-5 py-16 text-center">
-                    <Loader2 className="mx-auto animate-spin text-[#ea580c]" size={32} />
+                    <Loader2
+                      className="mx-auto animate-spin text-[#ea580c]"
+                      size={32}
+                    />
                     <p className="mt-3 text-sm text-[#9b8a7e]">
                       Loading registered users...
                     </p>
@@ -363,8 +390,8 @@ export default function ManageUsersPage() {
                 </tr>
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => {
-                  const displayRole = roleToDisplay(user.role);
-                  const RoleIcon = getRoleIcon(displayRole);
+                  const displayRole = roleToDisplay(user.role)
+                  const RoleIcon = getRoleIcon(displayRole)
 
                   return (
                     <tr
@@ -374,9 +401,12 @@ export default function ManageUsersPage() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           {user.image ? (
-                            <img
+                            <Image
                               src={user.image}
                               alt={user.name}
+                              width={44}
+                              height={44}
+                              unoptimized
                               className="h-11 w-11 rounded-full object-cover"
                             />
                           ) : (
@@ -438,7 +468,7 @@ export default function ManageUsersPage() {
                         </div>
                       </td>
                     </tr>
-                  );
+                  )
                 })
               ) : (
                 <tr>
@@ -481,9 +511,9 @@ export default function ManageUsersPage() {
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-purple-800/80">
-            Only authorized administrators should be able to manage
-            user accounts and permissions. Administrators cannot
-            change their own roles.
+            Only authorized administrators should be able to manage user
+            accounts and permissions. Administrators cannot change their own
+            roles.
           </p>
         </div>
       </section>
@@ -499,9 +529,7 @@ export default function ManageUsersPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-[#442719]">
-                User Details
-              </h2>
+              <h2 className="text-xl font-bold text-[#442719]">User Details</h2>
 
               <button
                 type="button"
@@ -515,9 +543,12 @@ export default function ManageUsersPage() {
 
             <div className="mt-6 flex flex-col items-center">
               {selectedUser.image ? (
-                <img
+                <Image
                   src={selectedUser.image}
                   alt={selectedUser.name}
+                  width={80}
+                  height={80}
+                  unoptimized
                   className="h-20 w-20 rounded-full object-cover"
                 />
               ) : (
@@ -542,7 +573,7 @@ export default function ManageUsersPage() {
                 <Mail size={18} className="text-[#ea580c]" />
                 <div>
                   <p className="text-xs text-[#9b8a7e]">Email Address</p>
-                  <p className="break-all text-sm font-medium text-[#442719]">
+                  <p className="text-sm font-medium break-all text-[#442719]">
                     {selectedUser.email}
                   </p>
                 </div>
@@ -595,12 +626,8 @@ export default function ManageUsersPage() {
             </p>
 
             <div className="mt-2 rounded-xl bg-[#faf7f2] p-4">
-              <p className="font-semibold text-[#442719]">
-                {editingUser.name}
-              </p>
-              <p className="mt-1 text-xs text-[#9b8a7e]">
-                {editingUser.email}
-              </p>
+              <p className="font-semibold text-[#442719]">{editingUser.name}</p>
+              <p className="mt-1 text-xs text-[#9b8a7e]">{editingUser.email}</p>
             </div>
 
             <label
@@ -635,7 +662,9 @@ export default function ManageUsersPage() {
               <button
                 type="button"
                 onClick={() => void handleUpdateRole()}
-                disabled={updating || newRole === roleToDisplay(editingUser.role)}
+                disabled={
+                  updating || newRole === roleToDisplay(editingUser.role)
+                }
                 className="inline-flex items-center gap-2 rounded-xl bg-[#ea580c] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c94b08] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {updating ? (
@@ -650,5 +679,5 @@ export default function ManageUsersPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

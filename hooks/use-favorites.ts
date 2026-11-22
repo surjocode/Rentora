@@ -2,11 +2,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import {
   getMyFavorites,
   addFavorite,
   removeFavorite,
 } from "@/services/favorite.service";
+
 import type { Equipment } from "@/services/equipment.service";
 
 export function useFavorites() {
@@ -26,15 +28,56 @@ export function useFavorites() {
       }
 
       setFavorites(result.data);
-    } catch (error) {
-      setError(
+    } catch (error: unknown) {
+      const message =
         error instanceof Error
           ? error.message
-          : "Failed to fetch favorites"
-      );
+          : "Failed to fetch favorites";
+
+      setError(message);
+      throw error;
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFavorites = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const result = await getMyFavorites();
+
+        if (!active) return;
+
+        if (!result.success) {
+          throw new Error(result.message);
+        }
+
+        setFavorites(result.data);
+      } catch (error: unknown) {
+        if (!active) return;
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch favorites"
+        );
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadFavorites();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const addToFavorites = async (equipmentId: string) => {
@@ -50,7 +93,7 @@ export function useFavorites() {
       await fetchFavorites();
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
@@ -74,7 +117,7 @@ export function useFavorites() {
       await fetchFavorites();
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
@@ -84,10 +127,6 @@ export function useFavorites() {
       throw error;
     }
   };
-
-  useEffect(() => {
-    void fetchFavorites();
-  }, [fetchFavorites]);
 
   return {
     favorites,

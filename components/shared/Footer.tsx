@@ -1,7 +1,7 @@
 
+import Image from "next/image";
 import Link from "next/link";
 import {
-  Package,
   Mail,
   MapPin,
   Phone,
@@ -42,25 +42,28 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[#442719]/10 bg-[#f5eee5] text-[#442719] transition-colors duration-300 dark:border-white/10 dark:bg-[#17120f] dark:text-[#f5e9dc]">
+    <footer className="border-t border-border bg-background text-foreground transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Information */}
           <div>
+            {/* Navbar Matching Logo */}
             <Link
               href="/"
-              className="mb-5 inline-flex items-center gap-2"
+              aria-label="Rentora Home"
+              className="group mb-5 flex h-16 w-48 shrink-0 items-center justify-start transition-transform duration-300 hover:scale-[1.03] sm:w-52"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ea580c] text-white">
-                <Package size={24} />
-              </span>
-
-              <span className="text-2xl font-bold text-[#442719] dark:text-[#f5e9dc]">
-                Rent<span className="text-[#ea580c]">ora</span>
-              </span>
+              <Image
+                src="/images/equipment-logo.png"
+                alt="Rentora Logo"
+                width={208}
+                height={80}
+                priority
+                className="h-full w-full object-contain object-left"
+              />
             </Link>
 
-            <p className="max-w-xs text-sm leading-7 text-[#785f50] dark:text-gray-400">
+            <p className="max-w-xs text-sm leading-7 text-muted-foreground">
               Rentora makes equipment rental simple, affordable, and
               accessible. Find the right equipment for every project.
             </p>
@@ -74,7 +77,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.name}
-                  className="rounded-lg bg-[#442719]/10 px-3 py-2 text-sm text-[#442719] transition hover:bg-[#ea580c] hover:text-white dark:bg-white/10 dark:text-gray-300 dark:hover:bg-[#ea580c] dark:hover:text-white"
+                  className="rounded-lg bg-secondary px-3 py-2 text-sm text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   {social.name}
                 </a>
@@ -84,7 +87,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="mb-6 text-lg font-semibold text-[#442719] dark:text-[#f5e9dc]">
+            <h3 className="mb-6 text-lg font-semibold text-foreground">
               Quick Links
             </h3>
 
@@ -93,7 +96,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#785f50] transition hover:text-[#ea580c] dark:text-gray-400 dark:hover:text-orange-400"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.name}
                   </Link>
@@ -104,7 +107,7 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h3 className="mb-6 text-lg font-semibold text-[#442719] dark:text-[#f5e9dc]">
+            <h3 className="mb-6 text-lg font-semibold text-foreground">
               Our Services
             </h3>
 
@@ -113,7 +116,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#785f50] transition hover:text-[#ea580c] dark:text-gray-400 dark:hover:text-orange-400"
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {link.name}
                   </Link>
@@ -124,31 +127,31 @@ export default function Footer() {
 
           {/* Contact Information */}
           <div>
-            <h3 className="mb-6 text-lg font-semibold text-[#442719] dark:text-[#f5e9dc]">
+            <h3 className="mb-6 text-lg font-semibold text-foreground">
               Contact Us
             </h3>
 
             <ul className="space-y-5">
               <li className="flex items-start gap-3">
                 <MapPin
-                  className="mt-1 shrink-0 text-[#ea580c]"
+                  className="mt-1 shrink-0 text-muted-foreground"
                   size={18}
                 />
 
-                <span className="text-sm leading-6 text-[#785f50] dark:text-gray-400">
+                <span className="text-sm leading-6 text-muted-foreground">
                   Bangladesh
                 </span>
               </li>
 
               <li className="flex items-center gap-3">
                 <Mail
-                  className="shrink-0 text-[#ea580c]"
+                  className="shrink-0 text-muted-foreground"
                   size={18}
                 />
 
                 <a
                   href="mailto:support@rentora.com"
-                  className="text-sm text-[#785f50] transition hover:text-[#ea580c] dark:text-gray-400 dark:hover:text-orange-400"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   support@rentora.com
                 </a>
@@ -156,11 +159,11 @@ export default function Footer() {
 
               <li className="flex items-center gap-3">
                 <Phone
-                  className="shrink-0 text-[#ea580c]"
+                  className="shrink-0 text-muted-foreground"
                   size={18}
                 />
 
-                <span className="text-sm text-[#785f50] dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   Contact information coming soon
                 </span>
               </li>
@@ -168,7 +171,7 @@ export default function Footer() {
 
             <Link
               href="/all-equipment"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#ea580c] transition hover:text-[#c2410c] dark:text-orange-400 dark:hover:text-orange-300"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
             >
               Explore Equipment
               <ArrowRight size={16} />
@@ -177,22 +180,22 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-[#442719]/15 pt-8 text-center sm:flex-row sm:text-left dark:border-white/10">
-          <p className="text-sm text-[#927c6d] dark:text-gray-500">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-center sm:flex-row sm:text-left">
+          <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Rentora. All rights reserved.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#927c6d] dark:text-gray-500">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <Link
               href="/privacy-policy"
-              className="transition hover:text-[#ea580c] dark:hover:text-orange-400"
+              className="transition-colors hover:text-foreground"
             >
               Privacy Policy
             </Link>
 
             <Link
               href="/terms"
-              className="transition hover:text-[#ea580c] dark:hover:text-orange-400"
+              className="transition-colors hover:text-foreground"
             >
               Terms & Conditions
             </Link>
