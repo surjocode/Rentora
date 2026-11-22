@@ -13,14 +13,56 @@ export interface AdminStats {
   [key: string]: unknown;
 }
 
-// Get all users
+// ==========================================
+// ADMIN RENTAL TYPES
+// ==========================================
+
+export interface AdminRentalEquipment {
+  _id: string;
+  name: string;
+  image: string;
+  category: string;
+  location: string;
+  pricePerDay: number;
+}
+
+export interface AdminRental {
+  _id: string;
+  equipmentId: string;
+  renterEmail: string;
+  ownerEmail: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  quantity: number;
+  totalPrice: number;
+
+  paymentStatus: "paid";
+  paymentMethod: "stripe" | "demo";
+
+  stripePaymentIntentId?: string;
+  demoTransactionId?: string;
+
+  createdAt: string;
+  updatedAt: string;
+
+  equipment?: AdminRentalEquipment;
+}
+
+// ==========================================
+// GET ALL USERS
+// ==========================================
+
 export const getAllUsers = async (): Promise<ApiResponse<User[]>> => {
   return apiRequest<ApiResponse<User[]>>("/api/admin/users", {
     requiresAuth: true,
   });
 };
 
-// Update user role
+// ==========================================
+// UPDATE USER ROLE
+// ==========================================
+
 export const updateUserRole = async (
   id: string,
   role: "renter" | "owner" | "admin"
@@ -35,7 +77,10 @@ export const updateUserRole = async (
   );
 };
 
-// Get all equipment for admin
+// ==========================================
+// GET ALL EQUIPMENT
+// ==========================================
+
 export const getAllAdminEquipment = async (): Promise<
   ApiResponse<Equipment[]>
 > => {
@@ -47,7 +92,10 @@ export const getAllAdminEquipment = async (): Promise<
   );
 };
 
-// Approve or reject equipment
+// ==========================================
+// UPDATE EQUIPMENT STATUS
+// ==========================================
+
 export const updateEquipmentStatus = async (
   id: string,
   status: "approved" | "rejected"
@@ -62,7 +110,10 @@ export const updateEquipmentStatus = async (
   );
 };
 
-// Update equipment by admin
+// ==========================================
+// UPDATE EQUIPMENT
+// ==========================================
+
 export const updateAdminEquipment = async (
   id: string,
   equipmentData: Partial<Equipment>
@@ -77,7 +128,10 @@ export const updateAdminEquipment = async (
   );
 };
 
-// Delete equipment by admin
+// ==========================================
+// DELETE EQUIPMENT
+// ==========================================
+
 export const deleteAdminEquipment = async (
   id: string
 ): Promise<ApiResponse<null>> => {
@@ -90,11 +144,29 @@ export const deleteAdminEquipment = async (
   );
 };
 
-// Get admin dashboard statistics
+// ==========================================
+// GET ADMIN DASHBOARD STATISTICS
+// ==========================================
+
 export const getAdminStats = async (): Promise<
   ApiResponse<AdminStats>
 > => {
   return apiRequest<ApiResponse<AdminStats>>("/api/admin/stats", {
     requiresAuth: true,
   });
+};
+
+// ==========================================
+// GET ALL PAID RENTALS (ADMIN ONLY)
+// ==========================================
+
+export const getAllAdminRentals = async (): Promise<
+  ApiResponse<AdminRental[]>
+> => {
+  return apiRequest<ApiResponse<AdminRental[]>>(
+    "/api/rentals/admin",
+    {
+      requiresAuth: true,
+    }
+  );
 };

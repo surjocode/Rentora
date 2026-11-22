@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -17,340 +17,344 @@ import {
   Minus,
   Plus,
   X,
-  CreditCard,
   CheckCircle2,
+  Mail,
+  FlaskConical,
+  LockKeyhole,
+  ShieldCheck as SecureIcon,
 } from "lucide-react"
 
-import {
-  Elements,
-  PaymentElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js"
-
-import { loadStripe } from "@stripe/stripe-js"
-
 import { getEquipmentById, type Equipment } from "@/services/equipment.service"
-import { createPaymentIntent } from "@/services/rental.service"
+import { createDemoBooking } from "@/services/rental.service"
 import { useAuth } from "@/hooks/use-auth"
 
-// Stripe configuration
-const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-  : null
-
-interface PaymentFormProps {
-  onSuccess: () => void
-}
-
-function PaymentForm({ onSuccess }: PaymentFormProps) {
-  const stripe = useStripe()
-  const elements = useElements()
-
-  const [paymentLoading, setPaymentLoading] = useState(false)
-  const [paymentError, setPaymentError] = useState<string | null>(null)
-
-  const handlePayment = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (!stripe || !elements) {
-      setPaymentError("Payment system is not ready. Please try again.")
-      return
-    }
-
-    try {
-      setPaymentLoading(true)
-      setPaymentError(null)
-
-      const result = await stripe.confirmPayment({
-        elements,
-        redirect: "if_required",
-      })
-
-      if (result.error) {
-        throw new Error(
-          result.error.message || "Payment could not be completed."
-        )
-      }
-
-      if (result.paymentIntent?.status === "succeeded") {
-        onSuccess()
-        return
-      }
-
-      if (result.paymentIntent?.status === "processing") {
-        setPaymentError(
-          "Your payment is processing. Please check My Rentals shortly."
-        )
-        return
-      }
-
-      setPaymentError(
-        "Payment has not been completed. Please try again."
-      )
-    } catch (error) {
-      setPaymentError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong during payment."
-      )
-    } finally {
-      setPaymentLoading(false)
-    }
-  }
-
-  return (
-    <form onSubmit={handlePayment} className="space-y-5">
-      <div>
-        <h3 className="mb-3 flex items-center gap-2 font-semibold text-[#442719]">
-          <CreditCard size={19} className="text-orange-600" />
-          Payment Information
-        </h3>
-
-        <PaymentElement />
-      </div>
-
-      {paymentError && (
-        <p
-          role="alert"
-          className="rounded-xl bg-red-50 p-3 text-sm text-red-600"
-        >
-          {paymentError}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={!stripe || !elements || paymentLoading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {paymentLoading ? (
-          <>
-            <RefreshCw size={18} className="animate-spin" />
-            Processing Payment...
-          </>
-        ) : (
-          <>
-            <CreditCard size={18} />
-            Pay Now
-          </>
-        )}
-      </button>
-
-      <p className="text-center text-xs leading-6 text-[#806b5e]">
-        Your booking will be created only after successful payment
-        verification.
-      </p>
-    </form>
-  )
-}
-
-interface PaymentModalProps {
+interface DemoBookingModalProps {
   equipment: Equipment
-  clientSecret: string
+  renterEmail: string
   startDate: string
   endDate: string
   totalDays: number
   quantity: number
   totalPrice: number
+  loading: boolean
+  error: string | null
+  success: boolean
   onClose: () => void
+  onConfirm: () => void
   onGoToRentals: () => void
 }
 
-function PaymentModal({
+function DemoBookingModal({
   equipment,
-  clientSecret,
+  renterEmail,
   startDate,
   endDate,
   totalDays,
   quantity,
   totalPrice,
+  loading,
+  error,
+  success,
   onClose,
+  onConfirm,
   onGoToRentals,
-}: PaymentModalProps) {
-  const [paymentSuccess, setPaymentSuccess] = useState(false)
-
+}: DemoBookingModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-      <div className="my-auto w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#eee5dc] p-5 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-3 backdrop-blur-sm sm:p-6">
+      <div className="my-auto grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-[0.85fr_1.15fr]">
+
+        {/* LEFT SIDE - BOOKING SUMMARY */}
+        <div className="relative flex flex-col justify-between bg-[#14233d] p-6 text-white sm:p-9">
+
           <div>
-            <h2 className="text-xl font-bold text-[#442719]">
-              Complete Your Payment
-            </h2>
-
-            <p className="mt-1 text-sm text-[#806b5e]">
-              Review your rental details and pay securely.
-            </p>
-          </div>
-
-          {!paymentSuccess && (
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close payment modal"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-[#806b5e] transition hover:bg-[#faf7f2] hover:text-red-600"
+              disabled={loading || success}
+              className="mb-9 flex items-center gap-2 text-xs font-medium text-slate-300 transition hover:text-white disabled:opacity-50"
             >
-              <X size={20} />
+              <ArrowLeft size={15} />
+              Cancel & Return
             </button>
-          )}
-        </div>
 
-        <div className="max-h-[75vh] overflow-y-auto p-5 sm:p-6">
-          {paymentSuccess ? (
-            <div className="py-8 text-center">
-              <CheckCircle2
-                size={64}
-                className="mx-auto text-green-600"
-              />
-
-              <h3 className="mt-5 text-2xl font-bold text-[#442719]">
-                Payment Successful!
-              </h3>
-
-              <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#806b5e]">
-                Your payment was successful. Stripe is notifying our
-                server to verify the payment and create your booking.
-                You can check the booking status in My Rentals.
-              </p>
-
-              <button
-                type="button"
-                onClick={onGoToRentals}
-                className="mt-7 w-full rounded-xl bg-orange-600 px-6 py-4 font-semibold text-white transition hover:bg-orange-700"
-              >
-                Go to My Rentals
-              </button>
+            <div className="mb-5 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-[11px] font-bold tracking-[0.15em] text-emerald-400">
+                RENTORA SECURE DEMO CHECKOUT
+              </span>
             </div>
-          ) : (
-            <>
-              {/* Equipment Information */}
-              <div className="flex gap-4 rounded-2xl bg-[#faf7f2] p-4">
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white">
-                  {equipment.image ? (
-                    <Image
-                      src={equipment.image}
-                      alt={equipment.name}
-                      fill
-                      unoptimized
-                      sizes="96px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <Package
-                      size={35}
-                      className="absolute inset-0 m-auto text-orange-500"
-                    />
-                  )}
-                </div>
 
-                <div className="min-w-0">
-                  <span className="text-xs font-semibold text-orange-600">
-                    {equipment.category}
-                  </span>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Rentora Checkout
+            </h2>
 
-                  <h3 className="mt-1 font-bold text-[#442719]">
-                    {equipment.name}
-                  </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              {equipment.name}
+            </p>
 
-                  <p className="mt-2 text-sm text-[#806b5e]">
-                    ৳{equipment.pricePerDay.toLocaleString("en-BD")} / day
-                  </p>
-                </div>
-              </div>
+            <div className="my-7 border-t border-white/10" />
 
-              {/* Rental Summary */}
-              <div className="mt-5 rounded-2xl border border-[#eee5dc] p-4">
-                <h3 className="font-semibold text-[#442719]">
-                  Rental Summary
-                </h3>
-
-                <div className="mt-4 space-y-3 text-sm">
-                  <div className="flex justify-between gap-3">
-                    <span className="text-[#806b5e]">
-                      Start Date
-                    </span>
-                    <span className="font-medium text-[#442719]">
-                      {startDate}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-3">
-                    <span className="text-[#806b5e]">
-                      End Date
-                    </span>
-                    <span className="font-medium text-[#442719]">
-                      {endDate}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-3">
-                    <span className="text-[#806b5e]">
-                      Rental Duration
-                    </span>
-                    <span className="font-medium text-[#442719]">
-                      {totalDays} days
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-3">
-                    <span className="text-[#806b5e]">
-                      Quantity
-                    </span>
-                    <span className="font-medium text-[#442719]">
-                      {quantity} items
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-3">
-                    <span className="text-[#806b5e]">
-                      Price Per Day
-                    </span>
-                    <span className="font-medium text-[#442719]">
-                      ৳{equipment.pricePerDay.toLocaleString("en-BD")}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-3 border-t border-[#eee5dc] pt-4">
-                    <span className="font-bold text-[#442719]">
-                      Total Amount
-                    </span>
-
-                    <span className="text-xl font-bold text-orange-600">
-                      ৳{totalPrice.toLocaleString("en-BD")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stripe Payment Element */}
-              <div className="mt-6">
-                {stripePromise ? (
-                  <Elements
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: "stripe",
-                        variables: {
-                          colorPrimary: "#ea580c",
-                          borderRadius: "10px",
-                        },
-                      },
-                    }}
-                  >
-                    <PaymentForm
-                      onSuccess={() => setPaymentSuccess(true)}
-                    />
-                  </Elements>
+            {/* Equipment */}
+            <div className="flex gap-4">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/10">
+                {equipment.image ? (
+                  <Image
+                    src={equipment.image}
+                    alt={equipment.name}
+                    fill
+                    unoptimized
+                    sizes="80px"
+                    className="object-cover"
+                  />
                 ) : (
-                  <p className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
-                    Stripe publishable key is missing. Please check
-                    your frontend environment configuration.
-                  </p>
+                  <Package
+                    size={30}
+                    className="absolute inset-0 m-auto text-orange-400"
+                  />
                 )}
               </div>
-            </>
+
+              <div className="min-w-0">
+                <span className="text-xs font-semibold text-orange-400">
+                  {equipment.category}
+                </span>
+
+                <h3 className="mt-1 font-semibold">
+                  {equipment.name}
+                </h3>
+
+                <p className="mt-2 text-xs text-slate-400">
+                  ৳{equipment.pricePerDay.toLocaleString("en-BD")} / day
+                </p>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="mt-8 space-y-5 text-sm">
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-400">Rental Start</span>
+                <span className="font-medium">{startDate}</span>
+              </div>
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-400">Rental End</span>
+                <span className="font-medium">{endDate}</span>
+              </div>
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-400">Duration</span>
+                <span className="font-medium">{totalDays} days</span>
+              </div>
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-400">Quantity</span>
+                <span className="font-medium">{quantity} items</span>
+              </div>
+
+              <div className="flex justify-between gap-3">
+                <span className="text-slate-400">Rental Fee</span>
+                <span className="font-medium">
+                  ৳{(equipment.pricePerDay * totalDays * quantity).toLocaleString("en-BD")}
+                </span>
+              </div>
+
+              <div className="border-t border-white/10 pt-5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-bold">Total Due Now</span>
+
+                  <span className="text-2xl font-bold text-emerald-400">
+                    ৳{totalPrice.toLocaleString("en-BD")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Security */}
+            <div className="mt-9 space-y-3 border-t border-white/10 pt-6">
+              <p className="flex items-center gap-2 text-xs text-slate-400">
+                <SecureIcon size={15} className="text-emerald-400" />
+                Secure booking verification
+              </p>
+
+              <p className="flex items-center gap-2 text-xs text-slate-400">
+                <LockKeyhole size={15} />
+                No real money will be charged
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-10 text-xs text-slate-500">
+            Powered by <span className="font-bold text-white">Rentora</span>
+          </p>
+        </div>
+
+        {/* RIGHT SIDE - DEMO PAYMENT */}
+        <div className="flex flex-col justify-between bg-white p-6 sm:p-9">
+
+          <div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">
+                  Payment Details
+                </h2>
+
+                <p className="mt-2 max-w-sm text-xs leading-5 text-slate-500">
+                  Confirm your equipment booking securely using our demo checkout.
+                </p>
+              </div>
+
+              {!success && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  aria-label="Close checkout"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-red-500 disabled:opacity-50"
+                >
+                  <X size={19} />
+                </button>
+              )}
+            </div>
+
+            {success ? (
+              <div className="py-16 text-center">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+                  <CheckCircle2 size={45} className="text-emerald-600" />
+                </div>
+
+                <h3 className="mt-6 text-2xl font-bold text-slate-900">
+                  Booking Successful!
+                </h3>
+
+                <p className="mx-auto mt-3 max-w-sm text-sm leading-7 text-slate-500">
+                  Your demo booking has been confirmed successfully.
+                  You can now view your booking in My Rentals.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={onGoToRentals}
+                  className="mt-8 w-full rounded-xl bg-[#5145e5] px-6 py-4 font-semibold text-white transition hover:bg-[#4338ca]"
+                >
+                  Go to My Rentals
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Demo Mode */}
+                <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical size={18} className="text-emerald-600" />
+
+                    <span className="text-sm font-bold text-emerald-800">
+                      Demo Mode Simulation
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-xs leading-6 text-emerald-700">
+                    This is a test booking. No real payment will be collected.
+                    No card information is required.
+                  </p>
+                </div>
+
+                {/* Customer Information */}
+                <div className="mt-7">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Customer Email
+                  </label>
+
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <Mail size={19} className="shrink-0 text-slate-500" />
+
+                    <span className="break-all text-sm text-slate-700">
+                      {renterEmail || "Email not available"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Booking Information */}
+                <div className="mt-6">
+                  <label className="mb-3 block text-sm font-semibold text-slate-700">
+                    Booking Information
+                  </label>
+
+                  <div className="space-y-3 rounded-xl border border-slate-200 p-4">
+
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Equipment</span>
+                      <span className="text-right font-medium text-slate-800">
+                        {equipment.name}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Rental Period</span>
+                      <span className="text-right font-medium text-slate-800">
+                        {totalDays} days
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Quantity</span>
+                      <span className="font-medium text-slate-800">
+                        {quantity}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                      <span className="font-bold text-slate-900">
+                        Total Amount
+                      </span>
+
+                      <span className="text-xl font-bold text-[#5145e5]">
+                        ৳{totalPrice.toLocaleString("en-BD")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <p
+                    role="alert"
+                    className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-600"
+                  >
+                    {error}
+                  </p>
+                )}
+
+                {/* Confirm */}
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  disabled={loading || !renterEmail}
+                  className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-[#5145e5] px-6 py-4 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-[#4338ca] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw size={18} className="animate-spin" />
+                      Confirming Booking...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={18} />
+                      Confirm Booking · ৳{totalPrice.toLocaleString("en-BD")}
+                    </>
+                  )}
+                </button>
+
+                <p className="mt-4 text-center text-xs text-slate-400">
+                  This is a simulated demo transaction. No card will be charged.
+                </p>
+              </>
+            )}
+          </div>
+
+          {!success && (
+            <p className="mt-8 text-center text-xs text-slate-400">
+              Cancel and return to Rentora
+            </p>
           )}
         </div>
       </div>
@@ -361,10 +365,16 @@ function PaymentModal({
 export default function EquipmentDetailsPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
-
   const id = params.id
 
-  const { isAuthenticated, loading: authLoading, isRenter } = useAuth()
+  const {
+    user,
+    isAuthenticated,
+    loading: authLoading,
+    isRenter,
+  } = useAuth()
+
+  const renterEmail = user?.email ?? ""
 
   const [equipment, setEquipment] = useState<Equipment | null>(null)
   const [loading, setLoading] = useState(true)
@@ -374,11 +384,12 @@ export default function EquipmentDetailsPage() {
   const [endDate, setEndDate] = useState("")
   const [quantity, setQuantity] = useState(1)
 
-  const [bookingLoading, setBookingLoading] = useState(false)
   const [bookingError, setBookingError] = useState<string | null>(null)
 
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [demoModalOpen, setDemoModalOpen] = useState(false)
+  const [demoBookingLoading, setDemoBookingLoading] = useState(false)
+  const [demoBookingError, setDemoBookingError] = useState<string | null>(null)
+  const [demoBookingSuccess, setDemoBookingSuccess] = useState(false)
 
   const today = new Date()
 
@@ -404,7 +415,7 @@ export default function EquipmentDetailsPage() {
       ? totalDays * equipment.pricePerDay * quantity
       : 0
 
-  // Fetch Equipment Details
+  // Fetch Equipment
   useEffect(() => {
     let isActive = true
 
@@ -447,58 +458,84 @@ export default function EquipmentDetailsPage() {
     }
   }, [id])
 
-  // Create Payment Intent
-  const handleBooking = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    setBookingError(null)
-
+  // Validate Booking
+  const validateBooking = (): string | null => {
     if (authLoading) {
-      setBookingError("Please wait while checking your account.")
-      return
+      return "Please wait while checking your account."
     }
 
     if (!isAuthenticated) {
       router.push("/login")
-      return
+      return "Please login to continue."
     }
 
     if (!isRenter) {
-      setBookingError("Only renter accounts can book equipment.")
-      return
+      return "Only renter accounts can book equipment."
     }
 
     if (!startDate || !endDate) {
-      setBookingError("Please select both rental dates.")
-      return
+      return "Please select both rental dates."
     }
 
     if (startDate < minDate) {
-      setBookingError("Start date cannot be in the past.")
-      return
+      return "Start date cannot be in the past."
     }
 
     if (totalDays <= 0) {
-      setBookingError("End date must be after the start date.")
-      return
+      return "End date must be after the start date."
     }
 
     if (!Number.isInteger(quantity) || quantity < 1) {
-      setBookingError("Please select a valid quantity.")
-      return
+      return "Please select a valid quantity."
     }
 
     if (quantity > availableQuantity) {
-      setBookingError(
-        `Only ${availableQuantity} items are currently available.`
-      )
+      return `Only ${availableQuantity} items are currently available.`
+    }
+
+    return null
+  }
+
+  // Open Demo Checkout
+  const handleOpenDemoCheckout = () => {
+    setBookingError(null)
+    setDemoBookingError(null)
+    setDemoBookingSuccess(false)
+
+    const validationError = validateBooking()
+
+    if (validationError) {
+      if (isAuthenticated) {
+        setBookingError(validationError)
+      }
+      return
+    }
+
+    if (!renterEmail) {
+      setBookingError("Unable to find your account email. Please login again.")
+      return
+    }
+
+    setDemoModalOpen(true)
+  }
+
+  // Confirm Demo Booking
+  const handleConfirmDemoBooking = async () => {
+    if (!isAuthenticated || !isRenter) {
+      setDemoBookingError("Please login with a renter account.")
+      return
+    }
+
+    if (!renterEmail) {
+      setDemoBookingError("Customer email is not available.")
       return
     }
 
     try {
-      setBookingLoading(true)
+      setDemoBookingLoading(true)
+      setDemoBookingError(null)
 
-      const result = await createPaymentIntent({
+      const result = await createDemoBooking({
         equipmentId: id,
         startDate,
         endDate,
@@ -509,28 +546,23 @@ export default function EquipmentDetailsPage() {
         throw new Error(result.message)
       }
 
-      if (!result.clientSecret) {
-        throw new Error("Unable to initialize the payment.")
-      }
-
-      // No rental is created here.
-      // Rental will be created by the Stripe webhook after successful payment.
-      setClientSecret(result.clientSecret)
-      setPaymentModalOpen(true)
+      setDemoBookingSuccess(true)
     } catch (error) {
-      setBookingError(
+      setDemoBookingError(
         error instanceof Error
           ? error.message
-          : "Failed to initialize payment."
+          : "Failed to create demo booking."
       )
     } finally {
-      setBookingLoading(false)
+      setDemoBookingLoading(false)
     }
   }
 
-  const handleClosePaymentModal = () => {
-    setPaymentModalOpen(false)
-    setClientSecret(null)
+  const handleCloseDemoModal = () => {
+    if (demoBookingLoading || demoBookingSuccess) return
+
+    setDemoModalOpen(false)
+    setDemoBookingError(null)
   }
 
   const handleGoToRentals = () => {
@@ -540,6 +572,7 @@ export default function EquipmentDetailsPage() {
   return (
     <main className="min-h-screen bg-[#faf7f2] px-5 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
+
         <Link
           href="/all-equipment"
           className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#806b5e] transition hover:text-orange-600"
@@ -587,6 +620,7 @@ export default function EquipmentDetailsPage() {
         {/* Equipment Details */}
         {!loading && !error && equipment && (
           <div className="grid gap-8 lg:grid-cols-2">
+
             {/* Equipment Image */}
             <div className="relative flex min-h-80 items-center justify-center overflow-hidden rounded-3xl border border-[#eee5dc] bg-white shadow-sm lg:min-h-[500px]">
               {equipment.image ? (
@@ -605,6 +639,7 @@ export default function EquipmentDetailsPage() {
 
             {/* Equipment Information */}
             <div className="rounded-3xl border border-[#eee5dc] bg-white p-6 shadow-sm sm:p-8">
+
               <span className="inline-block rounded-full bg-orange-100 px-4 py-2 text-xs font-semibold text-orange-700">
                 {equipment.category}
               </span>
@@ -632,6 +667,7 @@ export default function EquipmentDetailsPage() {
 
               {/* Additional Information */}
               <div className="mt-7 space-y-5">
+
                 <div className="flex items-center gap-3">
                   <MapPin className="shrink-0 text-orange-600" size={20} />
                   <span className="text-sm text-[#665348]">
@@ -674,6 +710,7 @@ export default function EquipmentDetailsPage() {
 
               {/* Booking Form */}
               <div className="mt-8 border-t border-[#eee5dc] pt-7">
+
                 <h2 className="text-xl font-bold text-[#442719]">
                   Book This Equipment
                 </h2>
@@ -682,7 +719,8 @@ export default function EquipmentDetailsPage() {
                   Select your rental period and quantity.
                 </p>
 
-                <form onSubmit={handleBooking} className="mt-6 space-y-5">
+                <div className="mt-6 space-y-5">
+
                   {/* Start Date */}
                   <div>
                     <label
@@ -784,6 +822,23 @@ export default function EquipmentDetailsPage() {
                     </p>
                   </div>
 
+                  {/* Customer Email */}
+                  {isAuthenticated && (
+                    <div className="rounded-xl border border-[#eee5dc] bg-[#faf7f2] p-4">
+                      <div className="flex items-center gap-2">
+                        <Mail size={18} className="text-orange-600" />
+
+                        <span className="text-sm font-semibold text-[#442719]">
+                          Booking Account
+                        </span>
+                      </div>
+
+                      <p className="mt-2 break-all text-sm text-[#665348]">
+                        {renterEmail || "Loading account email..."}
+                      </p>
+                    </div>
+                  )}
+
                   {/* Rental Summary */}
                   {totalDays > 0 && (
                     <div className="rounded-2xl bg-[#faf7f2] p-5">
@@ -792,6 +847,7 @@ export default function EquipmentDetailsPage() {
                       </h3>
 
                       <div className="mt-4 space-y-3 text-sm">
+
                         <div className="flex justify-between text-[#806b5e]">
                           <span>Price per day</span>
                           <span>
@@ -818,7 +874,7 @@ export default function EquipmentDetailsPage() {
                         </div>
 
                         <div className="flex justify-between border-t border-[#dfd0c2] pt-3 font-bold text-[#442719]">
-                          <span>Estimated Total</span>
+                          <span>Total Amount</span>
 
                           <span className="text-lg text-orange-600">
                             ৳{totalPrice.toLocaleString("en-BD")}
@@ -838,12 +894,13 @@ export default function EquipmentDetailsPage() {
                     </p>
                   )}
 
-                  {/* Submit Button */}
+                  {/* Demo Checkout Button */}
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleOpenDemoCheckout}
                     disabled={
-                      bookingLoading ||
                       authLoading ||
+                      demoBookingLoading ||
                       availableQuantity < 1 ||
                       quantity > availableQuantity ||
                       (isAuthenticated && !isRenter)
@@ -852,11 +909,6 @@ export default function EquipmentDetailsPage() {
                   >
                     {authLoading ? (
                       "Checking Account..."
-                    ) : bookingLoading ? (
-                      <>
-                        <RefreshCw size={18} className="animate-spin" />
-                        Preparing Payment...
-                      </>
                     ) : !isAuthenticated ? (
                       "Login to Book"
                     ) : !isRenter ? (
@@ -865,34 +917,39 @@ export default function EquipmentDetailsPage() {
                       "Currently Unavailable"
                     ) : (
                       <>
-                        <CreditCard size={18} />
-                        Book Now
+                        <CheckCircle2 size={19} />
+                        Continue to Checkout
                       </>
                     )}
                   </button>
 
-                  <p className="text-center text-xs leading-6 text-[#806b5e]">
-                    Your booking will be created only after successful
-                    payment verification.
-                  </p>
-                </form>
+                  <div className="flex items-center justify-center gap-2 text-xs text-[#806b5e]">
+                    <FlaskConical size={15} className="text-orange-600" />
+                    Demo Checkout · No Card Details Required
+                  </div>
+
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Payment Modal */}
-      {paymentModalOpen && clientSecret && equipment && (
-        <PaymentModal
+      {/* Demo Checkout Modal */}
+      {demoModalOpen && equipment && (
+        <DemoBookingModal
           equipment={equipment}
-          clientSecret={clientSecret}
+          renterEmail={renterEmail}
           startDate={startDate}
           endDate={endDate}
           totalDays={totalDays}
           quantity={quantity}
           totalPrice={totalPrice}
-          onClose={handleClosePaymentModal}
+          loading={demoBookingLoading}
+          error={demoBookingError}
+          success={demoBookingSuccess}
+          onClose={handleCloseDemoModal}
+          onConfirm={handleConfirmDemoBooking}
           onGoToRentals={handleGoToRentals}
         />
       )}

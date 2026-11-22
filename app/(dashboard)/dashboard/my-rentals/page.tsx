@@ -20,6 +20,8 @@ import {
   RefreshCw,
   Loader2,
   RotateCcw,
+  CreditCard,
+  FlaskConical,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -44,14 +46,22 @@ interface RentalWithEquipment extends Rental {
   equipment?: RentalEquipment;
 }
 
+// Format Date
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString("en-BD", {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Invalid date";
+  }
+
+  return parsedDate.toLocaleDateString("en-BD", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 };
 
+// Format Price
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat("en-BD").format(price);
 };
@@ -70,7 +80,10 @@ export default function MyRentalsPage() {
 
   const [search, setSearch] = useState("");
 
-  // Fetch customer bookings
+  // ==========================================
+  // FETCH CUSTOMER BOOKINGS
+  // ==========================================
+
   const fetchRentals = useCallback(async () => {
     try {
       setLoading(true);
@@ -84,7 +97,7 @@ export default function MyRentalsPage() {
 
       // Backend returns paid bookings only.
       setRentals(result.data);
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -106,20 +119,33 @@ export default function MyRentalsPage() {
     void fetchRentals();
   }, [authLoading, isAuthenticated, isRenter, fetchRentals]);
 
-  // Search bookings
+  // ==========================================
+  // SEARCH BOOKINGS
+  // ==========================================
+
   const filteredRentals = useMemo(() => {
+    const searchValue = search.trim().toLowerCase();
+
     return rentals.filter((rental) => {
       const equipmentName = rental.equipment?.name ?? "";
       const category = rental.equipment?.category ?? "";
       const location = rental.equipment?.location ?? "";
 
-      return [equipmentName, category, location].some((value) =>
-        value.toLowerCase().includes(search.trim().toLowerCase())
+      return [
+        equipmentName,
+        category,
+        location,
+        rental.paymentMethod,
+      ].some((value) =>
+        value.toLowerCase().includes(searchValue)
       );
     });
   }, [rentals, search]);
 
-  // Booking Summary
+  // ==========================================
+  // BOOKING SUMMARY
+  // ==========================================
+
   const totalBookings = rentals.length;
 
   const paidBookings = rentals.filter(
@@ -131,7 +157,10 @@ export default function MyRentalsPage() {
     0
   );
 
-  // Loading
+  // ==========================================
+  // LOADING
+  // ==========================================
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -149,7 +178,10 @@ export default function MyRentalsPage() {
     );
   }
 
-  // Authentication check
+  // ==========================================
+  // AUTHENTICATION CHECK
+  // ==========================================
+
   if (!isAuthenticated || !isRenter) {
     return (
       <div className="rounded-2xl border border-[#eee4da] bg-white px-5 py-16 text-center">
@@ -176,9 +208,14 @@ export default function MyRentalsPage() {
     );
   }
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Page Heading */}
+
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-[#ea580c]">
@@ -204,6 +241,7 @@ export default function MyRentalsPage() {
       </section>
 
       {/* Booking Summary */}
+
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <p className="text-sm text-[#9b8a7e]">
@@ -237,6 +275,7 @@ export default function MyRentalsPage() {
       </section>
 
       {/* Search */}
+
       <section className="flex flex-col gap-4 rounded-2xl border border-[#eee4da] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-bold text-[#442719]">
@@ -262,6 +301,7 @@ export default function MyRentalsPage() {
       </section>
 
       {/* Error */}
+
       {error && (
         <div className="flex flex-col justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center">
           <p className="text-sm text-red-600">{error}</p>
@@ -278,6 +318,7 @@ export default function MyRentalsPage() {
       )}
 
       {/* Bookings List */}
+
       {filteredRentals.length > 0 ? (
         <section className="space-y-4">
           {filteredRentals.map((rental) => (
@@ -287,6 +328,7 @@ export default function MyRentalsPage() {
             >
               <div className="flex flex-col gap-5 md:flex-row">
                 {/* Equipment Image */}
+
                 <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-xl bg-[#faf7f2] md:h-40 md:w-52">
                   {rental.equipment?.image ? (
                     <Image
@@ -305,6 +347,7 @@ export default function MyRentalsPage() {
                 </div>
 
                 {/* Equipment Information */}
+
                 <div className="flex flex-1 flex-col justify-between gap-4">
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -330,6 +373,7 @@ export default function MyRentalsPage() {
                   </div>
 
                   {/* Booking Details */}
+
                   <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                     <div>
                       <p className="text-xs text-[#9b8a7e]">
@@ -374,14 +418,30 @@ export default function MyRentalsPage() {
                   </div>
 
                   {/* Booking Footer */}
+
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f1e9e1] pt-4">
                     <p className="text-xs text-[#9b8a7e]">
                       Booked on {formatDate(rental.createdAt)}
                     </p>
 
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-600">
-                      Payment: Paid
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                        <CheckCircle size={14} />
+                        Paid
+                      </span>
+
+                      {rental.paymentMethod === "demo" ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
+                          <FlaskConical size={14} />
+                          Demo / Test Payment
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                          <CreditCard size={14} />
+                          Stripe Payment
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -427,18 +487,37 @@ export default function MyRentalsPage() {
         </section>
       )}
 
-      {/* Payment Status Guide */}
+      {/* Booking Confirmation */}
+
       <section className="rounded-2xl border border-[#eee4da] bg-white p-6">
         <h2 className="mb-5 font-bold text-[#442719]">
           Booking Confirmation
         </h2>
 
-        <div className="flex items-center gap-3">
-          <CheckCircle className="text-green-500" size={20} />
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="text-green-500" size={20} />
 
-          <span className="text-sm text-[#6b5a50]">
-            Paid - Payment successfully verified and booking confirmed.
-          </span>
+            <span className="text-sm text-[#6b5a50]">
+              Paid - Payment successfully verified and booking confirmed.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <FlaskConical className="text-orange-600" size={20} />
+
+            <span className="text-sm text-[#6b5a50]">
+              Demo / Test Payment - A simulated payment for testing.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <CreditCard className="text-blue-600" size={20} />
+
+            <span className="text-sm text-[#6b5a50]">
+              Stripe Payment - Payment processed through Stripe.
+            </span>
+          </div>
         </div>
       </section>
     </div>

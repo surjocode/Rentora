@@ -21,7 +21,9 @@ export interface Rental {
   quantity: number;
   totalPrice: number;
   paymentStatus: "paid";
-  stripePaymentIntentId: string;
+  paymentMethod: "stripe" | "demo";
+  stripePaymentIntentId?: string;
+  demoTransactionId?: string;
   createdAt: string;
   updatedAt: string;
   equipment?: RentalEquipment;
@@ -49,14 +51,7 @@ export const getOwnerBookings = async (): Promise<
   return apiRequest<ApiResponse<Rental[]>>("/api/rentals/owner", {
     requiresAuth: true,
   });
-}
-
-// Stripe PaymentIntent response
-export interface PaymentIntentResponse {
-  success: boolean;
-  message: string;
-  clientSecret?: string | null;
-}
+};
 
 // Payment request information
 export interface PaymentRequest {
@@ -66,12 +61,40 @@ export interface PaymentRequest {
   quantity: number;
 }
 
-// Create Stripe PaymentIntent before creating a booking
+// Stripe PaymentIntent response
+export interface PaymentIntentResponse {
+  success: boolean;
+  message: string;
+  clientSecret?: string | null;
+}
+
+// Create Stripe PaymentIntent
 export const createPaymentIntent = async (
   booking: PaymentRequest
 ): Promise<PaymentIntentResponse> => {
   return apiRequest<PaymentIntentResponse>(
     "/api/payments/create-payment-intent",
+    {
+      method: "POST",
+      requiresAuth: true,
+      body: JSON.stringify(booking),
+    }
+  );
+};
+
+// Demo Booking response
+export interface DemoBookingResponse {
+  success: boolean;
+  message: string;
+  data?: Rental;
+}
+
+// Create a demo booking without card information
+export const createDemoBooking = async (
+  booking: PaymentRequest
+): Promise<DemoBookingResponse> => {
+  return apiRequest<DemoBookingResponse>(
+    "/api/payments/create-demo-booking",
     {
       method: "POST",
       requiresAuth: true,
