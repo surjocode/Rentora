@@ -14,8 +14,8 @@ function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >
@@ -32,9 +32,7 @@ function isTypingTarget(target: EventTarget | null) {
 
   return (
     target.isContentEditable ||
-    target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.tagName === "SELECT"
+    ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
   );
 }
 
@@ -43,22 +41,15 @@ function ThemeHotkey() {
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.repeat) {
-        return;
-      }
-
-      if (event.metaKey || event.ctrlKey || event.altKey) {
-        return;
-      }
-
       if (
-        typeof event.key !== "string" ||
-        event.key.toLowerCase() !== "d"
+        event.defaultPrevented ||
+        event.repeat ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.key.toLowerCase() !== "d" ||
+        isTypingTarget(event.target)
       ) {
-        return;
-      }
-
-      if (isTypingTarget(event.target)) {
         return;
       }
 

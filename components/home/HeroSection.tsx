@@ -1,167 +1,181 @@
 
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Search,
   ShieldCheck,
-  Clock3,
-  Truck,
-  Wrench,
+  BadgeCheck,
+  Headset,
+  Wallet,
+  Zap,
+  PackageCheck,
 } from "lucide-react";
+
+const trustFeatures = [
+  {
+    icon: ShieldCheck,
+    title: "Secure",
+    subtitle: "Payments",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Verified",
+    subtitle: "Owners",
+  },
+  {
+    icon: Headset,
+    title: "24/7",
+    subtitle: "Support",
+  },
+  {
+    icon: Wallet,
+    title: "Affordable",
+    subtitle: "Prices",
+  },
+];
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      {/* Background Decoration */}
-      <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-emerald-100/60 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-teal-100/50 blur-3xl" />
+    <section className="relative isolate flex min-h-[720px] items-center overflow-hidden bg-[#faf7f2] transition-colors duration-500 dark:bg-[#101d19] lg:min-h-[calc(100vh-82px)]">
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 py-20 md:grid-cols-2 md:py-28 lg:px-8">
-        {/* Left Content */}
-        <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Your Modern Rental Marketplace
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 -z-30 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/images/hero-equipment.jpg.png')",
+        }}
+      />
+
+      {/* Light Mode Overlay */}
+      <div
+        className="absolute inset-0 -z-20 dark:hidden"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(250,247,242,0.99) 0%, rgba(250,247,242,0.96) 30%, rgba(250,247,242,0.82) 48%, rgba(250,247,242,0.28) 70%, rgba(250,247,242,0.05) 100%)",
+        }}
+      />
+
+      {/* Dark Mode Overlay */}
+      <div
+        className="absolute inset-0 -z-20 hidden dark:block"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(16,29,25,0.99) 0%, rgba(16,29,25,0.96) 30%, rgba(16,29,25,0.85) 48%, rgba(16,29,25,0.48) 72%, rgba(16,29,25,0.20) 100%)",
+        }}
+      />
+
+      {/* Decorative Background */}
+      <div className="pointer-events-none absolute -right-24 top-0 -z-10 h-full w-64 bg-emerald-900/20 dark:bg-emerald-950/50 [clip-path:polygon(100%_0,100%_100%,0_100%)]" />
+
+      <div className="mx-auto w-full max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-24">
+
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full max-w-[700px]"
+        >
+          {/* Badge */}
+          <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-[#ea580c]/20 bg-[#ea580c]/10 px-5 py-3 text-sm font-bold text-[#442719] shadow-sm backdrop-blur-md dark:border-orange-400/20 dark:bg-orange-400/10 dark:text-orange-300">
+            <Zap
+              size={19}
+              className="fill-[#ea580c] text-[#ea580c] dark:fill-orange-400 dark:text-orange-400"
+            />
+            Smart & Reliable Equipment Rentals
           </div>
 
-          <h1 className="max-w-xl text-4xl leading-tight font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-            Rent Smarter.
-            <span className="mt-2 block text-emerald-600">
+          {/* Heading */}
+          <h1 className="text-5xl leading-[1.08] font-black tracking-[-0.045em] text-[#442719] sm:text-6xl lg:text-[76px] dark:text-white">
+            Rent the Right
+            <br />
+            Equipment,
+            <br />
+            <span className="text-[#ea580c]">
               Do More.
             </span>
           </h1>
 
-          <p className="mt-6 max-w-lg text-base leading-8 text-gray-600 sm:text-lg">
-            From everyday essentials to professional equipment,
-            find what you need, when you need it. Rent easily,
-            save more, and make every project happen with Rentora.
+          {/* Description */}
+          <p className="mt-7 max-w-[550px] text-base leading-8 font-medium text-[#5d514a] sm:text-lg dark:text-slate-300">
+            Find and rent high-quality equipment for construction,
+            photography, events and more. Save money, work smarter,
+            and get things done with Rentora.
           </p>
 
-          {/* Search Bar */}
-          <form
-            action="/all-equipment"
-            method="GET"
-            className="mt-8 flex max-w-xl flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-lg sm:flex-row"
-          >
-            <div className="flex flex-1 items-center gap-3 px-3">
-              <Search className="shrink-0 text-emerald-600" size={22} />
-
-              <input
-                type="search"
-                name="search"
-                placeholder="What equipment do you need?"
-                className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Search
-              <ArrowRight size={18} />
-            </button>
-          </form>
-
           {/* CTA Buttons */}
-          <div className="mt-6 flex flex-wrap gap-4">
+          <div className="mt-9 flex flex-wrap items-center gap-4">
+
+            {/* Primary CTA */}
             <Link
               href="/all-equipment"
-              className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3.5 font-semibold text-white transition hover:bg-gray-800"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#ea580c] px-7 py-4 text-sm font-bold text-white shadow-lg shadow-orange-900/20 transition-all duration-300 hover:-translate-y-1 hover:bg-[#c2410c] hover:shadow-xl"
             >
-              Explore Equipment
-              <ArrowRight size={18} />
+              <Search size={19} />
+              Browse Equipment
+              <ArrowRight
+                size={19}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
             </Link>
 
+            {/* Secondary CTA */}
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 px-6 py-3.5 font-semibold text-emerald-700 transition hover:bg-emerald-50"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full border-2 border-[#442719]/25 bg-white/75 px-7 py-4 text-sm font-bold text-[#442719] shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#ea580c] hover:bg-[#442719] hover:text-white dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:border-orange-500 dark:hover:bg-[#ea580c]"
             >
+              <PackageCheck size={19} />
               Become an Owner
+              <ArrowRight
+                size={18}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
             </Link>
+
           </div>
 
           {/* Trust Features */}
-          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-4 text-sm text-gray-600">
-            <span className="flex items-center gap-2">
-              <ShieldCheck size={18} className="text-emerald-600" />
-              Secure Rental
-            </span>
+          <div className="mt-12 grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-4 sm:gap-x-4">
 
-            <span className="flex items-center gap-2">
-              <Clock3 size={18} className="text-emerald-600" />
-              Flexible Booking
-            </span>
+            {trustFeatures.map((feature, index) => {
+              const Icon = feature.icon;
 
-            <span className="flex items-center gap-2">
-              <Truck size={18} className="text-emerald-600" />
-              Easy Pickup
-            </span>
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: 0.4 + index * 0.12,
+                  }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#442719]/10 text-[#442719] transition-colors duration-300 dark:bg-white/10 dark:text-orange-400">
+                    <Icon size={23} />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold text-[#442719] dark:text-white">
+                      {feature.title}
+                    </p>
+                    <p className="text-xs font-medium text-[#74675f] dark:text-slate-400">
+                      {feature.subtitle}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+
           </div>
-        </div>
-
-        {/* Right Illustration */}
-        <div className="relative mx-auto w-full max-w-lg">
-          <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-emerald-600 to-teal-800 shadow-2xl">
-            <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full border border-white/20" />
-            <div className="absolute -bottom-20 -left-10 h-72 w-72 rounded-full border border-white/20" />
-
-            <div className="relative z-10 text-center text-white">
-              <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-[2rem] border border-white/20 bg-white/10 shadow-xl backdrop-blur-sm sm:h-52 sm:w-52">
-                <Wrench
-                  size={110}
-                  strokeWidth={1.2}
-                  className="rotate-[-25deg] text-white sm:h-36 sm:w-36"
-                />
-              </div>
-
-              <h2 className="mt-8 text-3xl font-bold sm:text-4xl">
-                Rentora
-              </h2>
-
-              <p className="mt-2 text-sm text-emerald-50 sm:text-base">
-                Everything you need. Just rent it.
-              </p>
-            </div>
-
-            {/* Floating Equipment Card */}
-            <div className="absolute left-4 top-8 rounded-2xl border border-white/40 bg-white p-3 shadow-xl sm:left-8">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100">
-                  <Wrench className="text-emerald-700" size={23} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-900">
-                    Power Tools
-                  </p>
-                  <p className="text-[10px] text-gray-500">
-                    Ready to rent
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Trust Card */}
-            <div className="absolute right-4 bottom-8 rounded-2xl border border-white/40 bg-white p-3 shadow-xl sm:right-8">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="text-emerald-600" size={25} />
-                <div>
-                  <p className="text-xs font-bold text-gray-900">
-                    Safe & Secure
-                  </p>
-                  <p className="text-[10px] text-gray-500">
-                    Rent with confidence
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p className="mt-4 text-center text-xs font-medium tracking-wide text-gray-500">
-         
-          </p>
-        </div>
+        </motion.div>
       </div>
+
+      {/* Bottom Decorative Curve */}
+      <div className="pointer-events-none absolute -bottom-20 -left-10 -z-10 h-32 w-[110%] -rotate-3 rounded-[50%] bg-[#442719]/10 dark:bg-[#031e17]" />
+
     </section>
   );
 }

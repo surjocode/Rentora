@@ -1,11 +1,15 @@
 
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   Search,
   CalendarCheck,
   CreditCard,
   Truck,
   ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 const steps = [
@@ -13,7 +17,7 @@ const steps = [
     number: "01",
     title: "Find Equipment",
     description:
-      "Browse our equipment collection and find the right tools for your project.",
+      "Explore our wide collection and discover the right equipment for your project.",
     icon: Search,
   },
   {
@@ -27,93 +31,165 @@ const steps = [
     number: "03",
     title: "Book & Pay",
     description:
-      "Confirm your booking and complete your payment securely online.",
+      "Confirm your rental booking and complete your payment securely.",
     icon: CreditCard,
   },
   {
     number: "04",
     title: "Get Your Equipment",
     description:
-      "Pick up your equipment and start working on your project with confidence.",
+      "Receive your equipment and get started with your project confidently.",
     icon: Truck,
   },
 ];
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 35,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut" as const,
+    },
+  },
+};
 
 export default function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="bg-white px-5 py-16 sm:px-6 lg:px-8 lg:py-20"
+      className="relative overflow-hidden bg-[#faf7f2] px-5 py-20 transition-colors duration-300 dark:bg-[#17120f] sm:px-6 lg:px-8 lg:py-24"
     >
-      <div className="mx-auto max-w-7xl">
+      {/* Background Decorations */}
+      <div className="pointer-events-none absolute -left-24 top-20 h-64 w-64 rounded-full bg-orange-200/20 blur-3xl dark:bg-orange-500/10" />
 
+      <div className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-amber-200/20 blur-3xl dark:bg-amber-500/5" />
+
+      <div className="relative mx-auto max-w-7xl">
         {/* Section Heading */}
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <span className="inline-block rounded-full bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto mb-16 max-w-2xl text-center"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 dark:border-orange-400/20 dark:bg-orange-500/10 dark:text-orange-400">
+            <CheckCircle2 size={16} />
             Simple & Convenient
           </span>
 
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-[#442719] sm:text-4xl">
-            How Does <span className="text-orange-600">Rentora</span> Work?
+          <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-[#442719] dark:text-[#f5e9dc] sm:text-4xl lg:text-5xl">
+            How Does{" "}
+            <span className="text-orange-600 dark:text-orange-400">
+              Rentora
+            </span>{" "}
+            Work?
           </h2>
 
-          <p className="mt-4 text-base leading-7 text-gray-500">
-            Renting equipment has never been easier. Follow these four
-            simple steps and get everything you need for your next project.
+          <p className="mt-5 text-base leading-8 text-gray-600 dark:text-gray-400 sm:text-lg">
+            Getting the right equipment is easier than ever. Follow these
+            four simple steps and focus on what matters most — your project.
           </p>
-        </div>
+        </motion.div>
 
         {/* Steps */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {steps.map((step, index) => {
             const Icon = step.icon;
 
             return (
-              <div key={step.number} className="relative text-center">
-
+              <motion.div
+                key={step.number}
+                variants={cardVariants}
+                className="group relative"
+              >
                 {/* Step Card */}
-                <div className="group flex h-full flex-col items-center rounded-2xl border border-[#eee5dc] bg-[#faf7f2] px-6 py-8 transition duration-300 hover:-translate-y-2 hover:border-orange-300 hover:shadow-lg">
+                <div className="relative flex h-full min-h-[290px] flex-col items-center overflow-hidden rounded-3xl border border-[#eadfd3] bg-white px-6 py-9 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-orange-300 hover:shadow-xl hover:shadow-orange-900/10 dark:border-white/10 dark:bg-[#241c17] dark:hover:border-orange-500/40">
+                  {/* Decorative Number */}
+                  <span className="absolute -right-2 -top-5 text-7xl font-black text-[#442719]/[0.04] transition-colors duration-300 group-hover:text-orange-500/10 dark:text-white/[0.04] dark:group-hover:text-orange-400/10">
+                    {step.number}
+                  </span>
 
                   {/* Icon */}
-                  <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-[#442719] text-orange-400 transition duration-300 group-hover:bg-orange-600 group-hover:text-white">
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-[#442719] text-orange-400 shadow-lg shadow-[#442719]/10 transition-all duration-300 group-hover:rotate-3 group-hover:bg-orange-600 group-hover:text-white dark:bg-[#3a291f] dark:text-orange-400 dark:group-hover:bg-orange-600 dark:group-hover:text-white">
                     <Icon size={34} strokeWidth={1.8} />
 
-                    <span className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-orange-500 text-xs font-bold text-white">
+                    <span className="absolute -right-3 -top-3 flex h-9 w-9 items-center justify-center rounded-full border-[3px] border-white bg-orange-500 text-xs font-bold text-white shadow-md dark:border-[#241c17]">
                       {step.number}
                     </span>
                   </div>
 
                   {/* Content */}
-                  <h3 className="mt-6 text-lg font-bold text-[#442719]">
+                  <h3 className="mt-7 text-lg font-bold text-[#442719] transition-colors duration-300 group-hover:text-orange-600 dark:text-[#f5e9dc] dark:group-hover:text-orange-400">
                     {step.title}
                   </h3>
 
-                  <p className="mt-3 text-sm leading-7 text-gray-500">
+                  <p className="mt-3 text-sm leading-7 text-gray-500 dark:text-gray-400">
                     {step.description}
                   </p>
+
+                  {/* Bottom Accent */}
+                  <div className="mt-auto flex w-full justify-center pt-6">
+                    <span className="h-1 w-10 rounded-full bg-orange-200 transition-all duration-300 group-hover:w-20 group-hover:bg-orange-500 dark:bg-orange-500/30 dark:group-hover:bg-orange-400" />
+                  </div>
                 </div>
 
-                {/* Arrow */}
+                {/* Connecting Arrow */}
                 {index !== steps.length - 1 && (
-                  <div className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 text-orange-400 lg:block">
-                    <ArrowRight size={24} />
+                  <div className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 lg:flex">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-orange-200 bg-[#faf7f2] text-orange-500 shadow-sm dark:border-orange-400/20 dark:bg-[#2b211a] dark:text-orange-400">
+                      <ArrowRight size={18} />
+                    </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Bottom CTA */}
-        <div className="mt-12 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mt-14 text-center"
+        >
+          <p className="mb-5 text-sm font-medium text-gray-600 dark:text-gray-400">
+            Ready to find the right equipment for your next project?
+          </p>
+
           <Link
             href="/all-equipment"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#442719] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+            className="group inline-flex items-center gap-2 rounded-xl bg-[#442719] px-7 py-4 text-sm font-bold text-white shadow-lg shadow-[#442719]/15 transition-all duration-300 hover:-translate-y-1 hover:bg-orange-600 hover:shadow-orange-600/20 dark:bg-orange-600 dark:hover:bg-orange-500"
           >
             Start Renting Now
-            <ArrowRight size={17} />
+            <ArrowRight
+              size={18}
+              className="transition-transform duration-300 group-hover:translate-x-1"
+            />
           </Link>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
