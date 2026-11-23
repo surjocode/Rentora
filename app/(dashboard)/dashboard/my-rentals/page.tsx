@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -14,8 +15,6 @@ import {
   RefreshCw,
   Loader2,
   RotateCcw,
-  CreditCard,
-  FlaskConical,
 } from "lucide-react"
 
 import { useAuth } from "@/hooks/use-auth"
@@ -81,7 +80,6 @@ export default function MyRentalsPage() {
         throw new Error(result.message)
       }
 
-      // Backend returns paid bookings only.
       setRentals(result.data)
     } catch (error: unknown) {
       setError(
@@ -93,22 +91,14 @@ export default function MyRentalsPage() {
   }, [])
 
   useEffect(() => {
-    let isActive = true
+    if (authLoading) return
 
-    Promise.resolve().then(() => {
-      if (!isActive) return
-
-      if (!isAuthenticated || !isRenter) {
-        setLoading(false)
-        return
-      }
-
-      void fetchRentals()
-    })
-
-    return () => {
-      isActive = false
+    if (!isAuthenticated || !isRenter) {
+      setLoading(false)
+      return
     }
+
+    void fetchRentals()
   }, [authLoading, isAuthenticated, isRenter, fetchRentals])
 
   // ==========================================
@@ -123,8 +113,8 @@ export default function MyRentalsPage() {
       const category = rental.equipment?.category ?? ""
       const location = rental.equipment?.location ?? ""
 
-      return [equipmentName, category, location, rental.paymentMethod].some(
-        (value) => value.toLowerCase().includes(searchValue)
+      return [equipmentName, category, location].some((value) =>
+        value.toLowerCase().includes(searchValue)
       )
     })
   }, [rentals, search])
@@ -135,11 +125,7 @@ export default function MyRentalsPage() {
 
   const totalBookings = rentals.length
 
-  const paidBookings = rentals.filter(
-    (rental) => rental.paymentStatus === "paid"
-  ).length
-
-  const totalSpent = rentals.reduce(
+  const totalBookingValue = rentals.reduce(
     (total, rental) => total + rental.totalPrice,
     0
   )
@@ -208,7 +194,7 @@ export default function MyRentalsPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[#9b8a7e]">
-            Welcome, {user?.name}. View your confirmed equipment bookings.
+            Welcome, {user?.name}. View and manage your equipment bookings.
           </p>
         </div>
 
@@ -223,7 +209,7 @@ export default function MyRentalsPage() {
 
       {/* Booking Summary */}
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <p className="text-sm text-[#9b8a7e]">Total Bookings</p>
 
@@ -233,18 +219,10 @@ export default function MyRentalsPage() {
         </div>
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <p className="text-sm text-[#9b8a7e]">Paid Bookings</p>
-
-          <h2 className="mt-2 text-3xl font-bold text-green-600">
-            {paidBookings}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <p className="text-sm text-[#9b8a7e]">Total Amount Spent</p>
+          <p className="text-sm text-[#9b8a7e]">Total Booking Value</p>
 
           <h2 className="mt-2 text-3xl font-bold text-[#ea580c]">
-            ৳{formatPrice(totalSpent)}
+            ৳{formatPrice(totalBookingValue)}
           </h2>
         </div>
       </section>
@@ -256,7 +234,7 @@ export default function MyRentalsPage() {
           <h2 className="font-bold text-[#442719]">Booking History</h2>
 
           <p className="mt-1 text-sm text-[#9b8a7e]">
-            Your successfully paid equipment bookings.
+            View your equipment booking history.
           </p>
         </div>
 
@@ -330,7 +308,7 @@ export default function MyRentalsPage() {
 
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-600">
                         <CheckCircle size={15} />
-                        Paid
+                        Booking Recorded
                       </span>
                     </div>
 
@@ -389,24 +367,10 @@ export default function MyRentalsPage() {
                       Booked on {formatDate(rental.createdAt)}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                        <CheckCircle size={14} />
-                        Paid
-                      </span>
-
-                      {rental.paymentMethod === "demo" ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
-                          <FlaskConical size={14} />
-                          Demo / Test Payment
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-                          <CreditCard size={14} />
-                          Stripe Payment
-                        </span>
-                      )}
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                      <CheckCircle size={14} />
+                      Booking Recorded
+                    </span>
                   </div>
                 </div>
               </div>
@@ -421,13 +385,13 @@ export default function MyRentalsPage() {
 
           <h2 className="mt-5 text-xl font-bold text-[#442719]">
             {rentals.length === 0
-              ? "No Confirmed Bookings Yet"
+              ? "No Bookings Yet"
               : "No Matching Bookings"}
           </h2>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#9b8a7e]">
             {rentals.length === 0
-              ? "Your confirmed bookings will appear here after successful payment. Explore our equipment collection to get started."
+              ? "Your equipment bookings will appear here. Explore our equipment collection to get started."
               : "No bookings match your current search."}
           </p>
 
@@ -451,38 +415,6 @@ export default function MyRentalsPage() {
           )}
         </section>
       )}
-
-      {/* Booking Confirmation */}
-
-      <section className="rounded-2xl border border-[#eee4da] bg-white p-6">
-        <h2 className="mb-5 font-bold text-[#442719]">Booking Confirmation</h2>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="text-green-500" size={20} />
-
-            <span className="text-sm text-[#6b5a50]">
-              Paid - Payment successfully verified and booking confirmed.
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <FlaskConical className="text-orange-600" size={20} />
-
-            <span className="text-sm text-[#6b5a50]">
-              Demo / Test Payment - A simulated payment for testing.
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <CreditCard className="text-blue-600" size={20} />
-
-            <span className="text-sm text-[#6b5a50]">
-              Stripe Payment - Payment processed through Stripe.
-            </span>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

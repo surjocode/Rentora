@@ -1,8 +1,10 @@
+
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+
 import {
   ClipboardList,
   Search,
@@ -13,7 +15,6 @@ import {
   RefreshCw,
   Package,
   CheckCircle,
-  CreditCard,
 } from "lucide-react"
 
 import { useAuth } from "@/hooks/use-auth"
@@ -32,12 +33,19 @@ interface RentalRequest extends Rental {
   equipment?: RentalEquipment
 }
 
-const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("en-BD", {
+const formatDate = (date: string) => {
+  const parsedDate = new Date(date)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Invalid date"
+  }
+
+  return parsedDate.toLocaleDateString("en-BD", {
     day: "numeric",
     month: "short",
     year: "numeric",
   })
+}
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat("en-BD").format(price)
@@ -51,7 +59,10 @@ export default function RentalRequestsPage() {
 
   const [search, setSearch] = useState("")
 
-  // Fetch owner's paid bookings
+  // ==========================================
+  // FETCH OWNER BOOKINGS
+  // ==========================================
+
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true)
@@ -64,7 +75,7 @@ export default function RentalRequestsPage() {
       }
 
       setBookings(result.data)
-    } catch (error) {
+    } catch (error: unknown) {
       setError(
         error instanceof Error
           ? error.message
@@ -76,25 +87,20 @@ export default function RentalRequestsPage() {
   }, [])
 
   useEffect(() => {
-    let isActive = true
+    if (authLoading) return
 
-    Promise.resolve().then(() => {
-      if (!isActive || authLoading) return
-
-      if (!isAuthenticated || !isOwner) {
-        setLoading(false)
-        return
-      }
-
-      void fetchBookings()
-    })
-
-    return () => {
-      isActive = false
+    if (!isAuthenticated || !isOwner) {
+      setLoading(false)
+      return
     }
+
+    void fetchBookings()
   }, [authLoading, isAuthenticated, isOwner, fetchBookings])
 
-  // Search bookings
+  // ==========================================
+  // SEARCH BOOKINGS
+  // ==========================================
+
   const filteredBookings = useMemo(() => {
     const searchTerm = search.trim().toLowerCase()
 
@@ -109,23 +115,29 @@ export default function RentalRequestsPage() {
     })
   }, [bookings, search])
 
-  // Booking summary
+  // ==========================================
+  // BOOKING SUMMARY
+  // ==========================================
+
   const totalBookings = bookings.length
 
-  const paidBookings = bookings.filter(
-    (booking) => booking.paymentStatus === "paid"
-  ).length
+  const totalBookingValue = bookings.reduce(
+    (total, booking) => total + booking.totalPrice,
+    0
+  )
 
-  const totalRevenue = bookings
-    .filter((booking) => booking.paymentStatus === "paid")
-    .reduce((total, booking) => total + booking.totalPrice, 0)
+  // ==========================================
+  // LOADING
+  // ==========================================
 
-  // Loading
   if (authLoading || loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <Loader2 size={36} className="mx-auto animate-spin text-[#ea580c]" />
+          <Loader2
+            size={36}
+            className="mx-auto animate-spin text-[#ea580c]"
+          />
 
           <p className="mt-3 text-sm text-[#9b8a7e]">
             Loading customer bookings...
@@ -135,7 +147,10 @@ export default function RentalRequestsPage() {
     )
   }
 
-  // Authentication check
+  // ==========================================
+  // AUTHENTICATION CHECK
+  // ==========================================
+
   if (!isAuthenticated || !isOwner) {
     return (
       <div className="rounded-2xl border border-[#eee4da] bg-white px-5 py-16 text-center">
@@ -159,9 +174,14 @@ export default function RentalRequestsPage() {
     )
   }
 
+  // ==========================================
+  // RENDER
+  // ==========================================
+
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       {/* Page Heading */}
+
       <section>
         <p className="text-sm font-semibold tracking-wider text-[#ea580c] uppercase">
           Owner Dashboard
@@ -172,12 +192,13 @@ export default function RentalRequestsPage() {
         </h1>
 
         <p className="mt-2 text-sm text-[#9b8a7e]">
-          View customer bookings and successful payments for your equipment.
+          View customer bookings for your equipment.
         </p>
       </section>
 
       {/* Summary Cards */}
-      <section className="grid gap-4 sm:grid-cols-3">
+
+      <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <div className="flex items-center justify-between">
             <p className="text-sm text-[#9b8a7e]">Total Bookings</p>
@@ -194,40 +215,27 @@ export default function RentalRequestsPage() {
 
         <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#9b8a7e]">Successful Payments</p>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
-              <CheckCircle size={21} />
-            </div>
-          </div>
-
-          <h2 className="mt-3 text-3xl font-bold text-green-600">
-            {paidBookings}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-[#eee4da] bg-white p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-[#9b8a7e]">Total Revenue</p>
+            <p className="text-sm text-[#9b8a7e]">Total Booking Value</p>
 
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#ea580c]">
-              <CreditCard size={21} />
+              <Package size={21} />
             </div>
           </div>
 
           <h2 className="mt-3 text-3xl font-bold text-[#442719]">
-            ৳{formatPrice(totalRevenue)}
+            ৳{formatPrice(totalBookingValue)}
           </h2>
         </div>
       </section>
 
       {/* Search */}
+
       <section className="flex flex-col gap-4 rounded-2xl border border-[#eee4da] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-bold text-[#442719]">Customer Bookings</h2>
 
           <p className="mt-1 text-sm text-[#9b8a7e]">
-            Only successfully paid bookings are displayed.
+            All bookings for your equipment.
           </p>
         </div>
 
@@ -245,11 +253,13 @@ export default function RentalRequestsPage() {
       </section>
 
       {/* Error Message */}
+
       {error && (
         <div className="flex flex-col justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center">
           <p className="text-sm text-red-600">{error}</p>
 
           <button
+            type="button"
             onClick={() => void fetchBookings()}
             className="inline-flex items-center gap-2 text-sm font-semibold text-red-600"
           >
@@ -260,6 +270,7 @@ export default function RentalRequestsPage() {
       )}
 
       {/* Booking List */}
+
       {filteredBookings.length > 0 ? (
         <section className="grid gap-5 lg:grid-cols-2">
           {filteredBookings.map((booking) => (
@@ -268,6 +279,7 @@ export default function RentalRequestsPage() {
               className="rounded-2xl border border-[#eee4da] bg-white p-5 shadow-sm"
             >
               {/* Equipment Information */}
+
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#fff0e5]">
@@ -300,11 +312,12 @@ export default function RentalRequestsPage() {
 
                 <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600">
                   <CheckCircle size={14} />
-                  Paid
+                  Booked
                 </span>
               </div>
 
               {/* Customer Details */}
+
               <div className="mt-5 space-y-3 border-t border-[#eee4da] pt-4">
                 <p className="flex items-center gap-2 text-sm break-all text-[#6b5a50]">
                   <UserRound size={17} className="shrink-0" />
@@ -328,9 +341,17 @@ export default function RentalRequestsPage() {
                     {booking.totalDays} days
                   </span>
                 </p>
+
+                <p className="text-sm text-[#6b5a50]">
+                  Quantity:{" "}
+                  <span className="font-semibold">
+                    {booking.quantity} items
+                  </span>
+                </p>
               </div>
 
-              {/* Payment Information */}
+              {/* Booking Price */}
+
               <div className="mt-5 flex items-center justify-between border-t border-[#eee4da] pt-4">
                 <div>
                   <p className="text-xs text-[#9b8a7e]">Total Rental Price</p>
@@ -340,8 +361,8 @@ export default function RentalRequestsPage() {
                   </p>
                 </div>
 
-                <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-600">
-                  Payment Successful
+                <span className="rounded-full bg-[#faf0e8] px-3 py-1.5 text-xs font-semibold text-[#ea580c]">
+                  Booking Recorded
                 </span>
               </div>
 
@@ -359,18 +380,19 @@ export default function RentalRequestsPage() {
 
           <h2 className="mt-5 text-xl font-bold text-[#442719]">
             {bookings.length === 0
-              ? "No Paid Bookings Yet"
+              ? "No Bookings Yet"
               : "No Matching Bookings"}
           </h2>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#9b8a7e]">
             {bookings.length === 0
-              ? "When customers successfully pay for your equipment, their bookings will appear here."
+              ? "When customers book your equipment, their booking details will appear here."
               : "No bookings match your current search."}
           </p>
 
           {bookings.length > 0 && (
             <button
+              type="button"
               onClick={() => setSearch("")}
               className="mt-6 rounded-xl bg-[#faf0e8] px-6 py-3 text-sm font-semibold text-[#ea580c]"
             >

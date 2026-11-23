@@ -1,15 +1,27 @@
 
 import { getAuthToken } from "@/lib/getAuthToken";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// ==========================================
+// CONFIGURATION
+// ==========================================
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
 
 if (!API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL is missing from .env.local");
 }
 
+// ==========================================
+// TYPES
+// ==========================================
+
 interface ApiOptions extends RequestInit {
   requiresAuth?: boolean;
 }
+
+// ==========================================
+// API REQUEST
+// ==========================================
 
 export async function apiRequest<T>(
   endpoint: string,
@@ -23,23 +35,25 @@ export async function apiRequest<T>(
 
   const requestHeaders = new Headers(headers);
 
-  // Set JSON Content-Type when request body is not FormData
+  const isFormData =
+    typeof FormData !== "undefined" &&
+    fetchOptions.body instanceof FormData;
+
+  // Set JSON Content-Type when needed
   if (
     fetchOptions.body &&
-    !(fetchOptions.body instanceof FormData) &&
+    !isFormData &&
     !requestHeaders.has("Content-Type")
   ) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
-  // Attach JWT token for protected APIs
+  // Attach JWT token for protected routes
   if (requiresAuth) {
     const token = await getAuthToken();
 
     if (!token) {
-      throw new Error(
-        "Authentication required. Please login first."
-      );
+      throw new Error("Authentication required. Please login first.");
     }
 
     requestHeaders.set("Authorization", `Bearer ${token}`);
@@ -48,20 +62,33 @@ export async function apiRequest<T>(
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...fetchOptions,
     headers: requestHeaders,
-    cache: "no-store",
+    cache: fetchOptions.cache ?? "no-store",
   });
 
-  // Handle empty or non-JSON responses safely
+  // Handle empty responses
+  if (response.status === 204) {
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    return undefined as T;
+  }
+
+  // Parse response safely
   const contentType = response.headers.get("content-type");
 
   let result: unknown;
 
-  if (contentType?.includes("application/json")) {
+  if (
+    contentType?.includes("application/json") ||
+    contentType?.includes("+json")
+  ) {
     result = await response.json();
   } else {
     result = await response.text();
   }
 
+  // Handle API errors
   if (!response.ok) {
     const message =
       typeof result === "object" &&
@@ -69,7 +96,7 @@ export async function apiRequest<T>(
       "message" in result &&
       typeof result.message === "string"
         ? result.message
-        : typeof result === "string" && result
+        : typeof result === "string" && result.trim()
           ? result
           : `API request failed with status ${response.status}`;
 

@@ -1,9 +1,10 @@
 
+import type { ReactNode } from "react";
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 
 interface PublicLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function PublicLayout({
@@ -12,9 +13,7 @@ export default function PublicLayout({
   return (
     <>
       <Navbar />
-
-      <main className="flex-1">{children}</main>
-
+      <main className="min-h-screen flex-1">{children}</main>
       <Footer />
     </>
   );

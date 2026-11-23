@@ -1,12 +1,10 @@
 
 import { apiRequest } from "@/lib/api";
-import { getAuthToken } from "@/lib/getAuthToken";
 
-// API Base URL
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+// ==========================================
+// TYPES
+// ==========================================
 
-// Equipment Interface
 export interface Equipment {
   _id: string;
   name: string;
@@ -27,10 +25,10 @@ export interface Equipment {
   updatedAt: string;
 }
 
-// Equipment Filters
 export interface EquipmentFilters {
   search?: string;
   category?: string;
+  location?: string;
   rentalType?: "daily" | "weekly" | "monthly";
   minPrice?: number;
   maxPrice?: number;
@@ -38,13 +36,11 @@ export interface EquipmentFilters {
   sort?: "newest" | "oldest" | "price-asc" | "price-desc";
 }
 
-// Create Equipment Data
 export type CreateEquipmentData = Omit<
   Equipment,
   "_id" | "ownerEmail" | "status" | "createdAt" | "updatedAt"
 >;
 
-// Update Equipment Data
 export type UpdateEquipmentData = Partial<
   Pick<
     Equipment,
@@ -63,14 +59,12 @@ export type UpdateEquipmentData = Partial<
   >
 >;
 
-// API Response
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-// Image Upload Response
 interface UploadResponse {
   success: boolean;
   message: string;
@@ -79,18 +73,25 @@ interface UploadResponse {
   };
 }
 
-// Get All Approved Equipment
+// ==========================================
+// GET ALL APPROVED EQUIPMENT
+// ==========================================
+
 export const getAllEquipment = async (
   filters: EquipmentFilters = {}
 ): Promise<ApiResponse<Equipment[]>> => {
   const params = new URLSearchParams();
 
-  if (filters.search) {
-    params.set("search", filters.search);
+  if (filters.search?.trim()) {
+    params.set("search", filters.search.trim());
   }
 
-  if (filters.category) {
-    params.set("category", filters.category);
+  if (filters.category?.trim()) {
+    params.set("category", filters.category.trim());
+  }
+
+  if (filters.location?.trim()) {
+    params.set("location", filters.location.trim());
   }
 
   if (filters.rentalType) {
@@ -105,8 +106,8 @@ export const getAllEquipment = async (
     params.set("maxPrice", String(filters.maxPrice));
   }
 
-  if (filters.available) {
-    params.set("available", "true");
+  if (filters.available !== undefined) {
+    params.set("available", String(filters.available));
   }
 
   if (filters.sort) {
@@ -122,12 +123,15 @@ export const getAllEquipment = async (
   return apiRequest<ApiResponse<Equipment[]>>(endpoint);
 };
 
-// Get Single Equipment
+// ==========================================
+// GET SINGLE EQUIPMENT
+// ==========================================
+
 export const getEquipmentById = async (
   id: string
 ): Promise<ApiResponse<Equipment>> => {
   return apiRequest<ApiResponse<Equipment>>(
-    `/api/equipment/${id}`,
+    `/api/equipment/${encodeURIComponent(id)}`,
     {
       method: "GET",
       requiresAuth: true,
@@ -135,7 +139,10 @@ export const getEquipmentById = async (
   );
 };
 
-// Get Owner's Equipment
+// ==========================================
+// GET OWNER'S EQUIPMENT
+// ==========================================
+
 export const getMyEquipment = async (): Promise<
   ApiResponse<Equipment[]>
 > => {
@@ -147,7 +154,10 @@ export const getMyEquipment = async (): Promise<
   );
 };
 
-// Add New Equipment
+// ==========================================
+// ADD NEW EQUIPMENT
+// ==========================================
+
 export const addEquipment = async (
   equipment: CreateEquipmentData
 ): Promise<ApiResponse<Equipment>> => {
@@ -161,13 +171,16 @@ export const addEquipment = async (
   );
 };
 
-// Update Equipment
+// ==========================================
+// UPDATE EQUIPMENT
+// ==========================================
+
 export const updateEquipment = async (
   id: string,
   updates: UpdateEquipmentData
 ): Promise<ApiResponse<Equipment>> => {
   return apiRequest<ApiResponse<Equipment>>(
-    `/api/equipment/${id}`,
+    `/api/equipment/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
       requiresAuth: true,
@@ -176,12 +189,15 @@ export const updateEquipment = async (
   );
 };
 
-// Delete Equipment
+// ==========================================
+// DELETE EQUIPMENT
+// ==========================================
+
 export const deleteEquipment = async (
   id: string
 ): Promise<ApiResponse<null>> => {
   return apiRequest<ApiResponse<null>>(
-    `/api/equipment/${id}`,
+    `/api/equipment/${encodeURIComponent(id)}`,
     {
       method: "DELETE",
       requiresAuth: true,
@@ -189,7 +205,10 @@ export const deleteEquipment = async (
   );
 };
 
-// Upload Equipment Image to ImgBB
+// ==========================================
+// UPLOAD EQUIPMENT IMAGE
+// ==========================================
+
 export const uploadEquipmentImage = async (
   image: File
 ): Promise<string> => {
@@ -197,29 +216,17 @@ export const uploadEquipmentImage = async (
 
   formData.append("image", image);
 
-  const token = await getAuthToken();
-
-  if (!token) {
-    throw new Error("Please login before uploading an image");
-  }
-
-  const response = await fetch(
-    `${API_BASE_URL}/api/upload`,
+  const result = await apiRequest<UploadResponse>(
+    "/api/upload",
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      requiresAuth: true,
       body: formData,
     }
   );
 
-  const result = (await response.json()) as UploadResponse;
-
-  if (!response.ok || !result.success || !result.data?.url) {
-    throw new Error(
-      result.message || "Image upload failed"
-    );
+  if (!result.success || !result.data?.url) {
+    throw new Error(result.message || "Image upload failed.");
   }
 
   return result.data.url;
