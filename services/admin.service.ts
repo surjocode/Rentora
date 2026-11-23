@@ -3,11 +3,19 @@ import { apiRequest } from "@/lib/api";
 import type { User } from "@/services/user.service";
 import type { Equipment } from "@/services/equipment.service";
 
+// ==========================================
+// API RESPONSE
+// ==========================================
+
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
+
+// ==========================================
+// ADMIN STATISTICS
+// ==========================================
 
 export interface AdminStats {
   [key: string]: unknown;
@@ -17,36 +25,48 @@ export interface AdminStats {
 // ADMIN RENTAL TYPES
 // ==========================================
 
-export interface AdminRentalEquipment {
-  _id: string;
-  name: string;
-  image: string;
-  category: string;
-  location: string;
-  pricePerDay: number;
-}
+export type AdminRentalType = "daily" | "weekly" | "monthly";
+
+export type AdminBookingStatus =
+  | "pending_payment"
+  | "confirmed"
+  | "completed"
+  | "cancelled";
+
+export type AdminPaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "refunded";
 
 export interface AdminRental {
   _id: string;
   equipmentId: string;
-  renterEmail: string;
+  equipmentName: string;
+
+  customerEmail: string;
   ownerEmail: string;
+
   startDate: string;
   endDate: string;
-  totalDays: number;
+
+  rentalType: AdminRentalType;
+  rentalDays: number;
+  periodCount: number;
+
   quantity: number;
-  totalPrice: number;
+  unitPrice: number;
+  totalAmount: number;
 
-  paymentStatus: "paid";
-  paymentMethod: "stripe" | "demo";
+  phone: string;
+  address: string;
+  notes: string;
 
-  stripePaymentIntentId?: string;
-  demoTransactionId?: string;
+  paymentStatus: AdminPaymentStatus;
+  bookingStatus: AdminBookingStatus;
 
   createdAt: string;
   updatedAt: string;
-
-  equipment?: AdminRentalEquipment;
 }
 
 // ==========================================
@@ -67,14 +87,11 @@ export const updateUserRole = async (
   id: string,
   role: "renter" | "owner" | "admin"
 ): Promise<ApiResponse<User>> => {
-  return apiRequest<ApiResponse<User>>(
-    `/api/admin/users/${id}/role`,
-    {
-      method: "PATCH",
-      requiresAuth: true,
-      body: JSON.stringify({ role }),
-    }
-  );
+  return apiRequest<ApiResponse<User>>(`/api/admin/users/${id}/role`, {
+    method: "PATCH",
+    requiresAuth: true,
+    body: JSON.stringify({ role }),
+  });
 };
 
 // ==========================================
@@ -84,13 +101,11 @@ export const updateUserRole = async (
 export const getAllAdminEquipment = async (): Promise<
   ApiResponse<Equipment[]>
 > => {
-  return apiRequest<ApiResponse<Equipment[]>>(
-    "/api/admin/equipment",
-    {
-      requiresAuth: true,
-    }
-  );
+  return apiRequest<ApiResponse<Equipment[]>>("/api/admin/equipment", {
+    requiresAuth: true,
+  });
 };
+
 
 // ==========================================
 // UPDATE EQUIPMENT STATUS
@@ -98,7 +113,7 @@ export const getAllAdminEquipment = async (): Promise<
 
 export const updateEquipmentStatus = async (
   id: string,
-  status: "approved" | "rejected"
+  status: "pending" | "approved" | "rejected"
 ): Promise<ApiResponse<Equipment>> => {
   return apiRequest<ApiResponse<Equipment>>(
     `/api/admin/equipment/${id}/status`,
@@ -109,6 +124,7 @@ export const updateEquipmentStatus = async (
     }
   );
 };
+
 
 // ==========================================
 // UPDATE EQUIPMENT
@@ -157,7 +173,7 @@ export const getAdminStats = async (): Promise<
 };
 
 // ==========================================
-// GET ALL PAID RENTALS (ADMIN ONLY)
+// GET ALL RENTALS (ADMIN ONLY)
 // ==========================================
 
 export const getAllAdminRentals = async (): Promise<

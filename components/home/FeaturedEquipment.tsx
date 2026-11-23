@@ -11,6 +11,12 @@ import {
   MapPin,
 } from "lucide-react";
 
+import { useAuth } from "@/hooks/use-auth";
+
+// ==========================================
+// TYPES
+// ==========================================
+
 export interface Equipment {
   _id: string;
   name: string;
@@ -31,9 +37,15 @@ interface FeaturedEquipmentProps {
   equipment: Equipment[];
 }
 
+// ==========================================
+// FEATURED EQUIPMENT
+// ==========================================
+
 export default function FeaturedEquipment({
   equipment,
 }: FeaturedEquipmentProps) {
+  const { isAuthenticated } = useAuth();
+
   return (
     <section
       id="featured-equipment"
@@ -43,6 +55,7 @@ export default function FeaturedEquipment({
       <div className="pointer-events-none absolute -right-32 top-10 h-72 w-72 rounded-full bg-secondary/60 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl">
+
         {/* Section Heading */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -84,8 +97,9 @@ export default function FeaturedEquipment({
 
         {/* Equipment Grid */}
         {equipment.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {equipment.map((item, index) => (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+            {equipment.slice(0, 6).map((item, index) => (
               <motion.article
                 key={item._id}
                 initial={{ opacity: 0, y: 25 }}
@@ -97,15 +111,16 @@ export default function FeaturedEquipment({
                 }}
                 className="group overflow-hidden rounded-3xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-ring hover:shadow-xl"
               >
-                {/* Image Container */}
+                {/* Equipment Image */}
                 <div className="relative h-56 overflow-hidden bg-secondary">
+
                   {item.image ? (
                     <Image
                       src={item.image}
                       alt={item.name}
                       fill
                       unoptimized
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                   ) : (
@@ -121,12 +136,18 @@ export default function FeaturedEquipment({
                   <span className="absolute bottom-4 left-4 rounded-full border border-white/30 bg-white/95 px-3.5 py-1.5 text-xs font-bold text-[#212121] shadow-md backdrop-blur-md">
                     {item.category}
                   </span>
+
+                  {/* Availability Badge */}
+                  <span className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-green-700 shadow-md">
+                    Available
+                  </span>
                 </div>
 
                 {/* Equipment Information */}
                 <div className="p-5">
+
                   {/* Equipment Name */}
-                  <h3 className="truncate text-lg font-extrabold text-foreground transition-colors duration-300 group-hover:text-muted-foreground">
+                  <h3 className="truncate text-lg font-extrabold text-foreground transition-colors duration-300 group-hover:text-primary">
                     {item.name}
                   </h3>
 
@@ -134,16 +155,18 @@ export default function FeaturedEquipment({
                   <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin
                       size={16}
-                      className="shrink-0 text-muted-foreground"
+                      className="shrink-0"
                     />
-                    <span className="truncate">{item.location}</span>
+                    <span className="truncate">
+                      {item.location}
+                    </span>
                   </div>
 
                   {/* Rating */}
                   <div className="mt-3 flex items-center gap-2">
                     <Star
                       size={16}
-                      className="text-muted-foreground"
+                      className="text-amber-500"
                     />
 
                     <span className="text-sm font-bold text-foreground">
@@ -175,11 +198,17 @@ export default function FeaturedEquipment({
                       </p>
                     </div>
 
+                    {/* Login / Equipment Details */}
                     <Link
-                      href={`/equipment/${item._id}`}
+                      href={
+                        isAuthenticated
+                          ? `/equipment/${item._id}`
+                          : "/login"
+                      }
                       className="group/button inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-4 py-3 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-300 hover:opacity-85"
                     >
-                      Details
+                      View Details
+
                       <ArrowRight
                         size={15}
                         className="transition-transform duration-300 group-hover/button:translate-x-1"
@@ -189,8 +218,10 @@ export default function FeaturedEquipment({
                 </div>
               </motion.article>
             ))}
+
           </div>
         ) : (
+
           /* Empty State */
           <div className="rounded-3xl border border-dashed border-border bg-card px-5 py-16 text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-foreground">

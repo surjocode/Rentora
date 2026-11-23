@@ -1,15 +1,15 @@
 
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   LockKeyhole,
   Mail,
   ShieldCheck,
-  Wrench,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
@@ -22,6 +22,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [redirectTo, setRedirectTo] = useState("/dashboard");
+
+  // Get redirect path from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+
+    if (
+      redirect &&
+      redirect.startsWith("/") &&
+      !redirect.startsWith("//")
+    ) {
+      setRedirectTo(redirect);
+    }
+  }, []);
 
   // Email and Password Login
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
@@ -35,7 +50,7 @@ export default function LoginPage() {
         email,
         password,
         rememberMe,
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       });
 
       if (result.error) {
@@ -43,7 +58,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -60,7 +75,7 @@ export default function LoginPage() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       });
 
       if (result.error) {
@@ -81,8 +96,15 @@ export default function LoginPage() {
 
         {/* Left Side */}
         <div className="hidden flex-col justify-center bg-[#442719] p-10 text-white md:flex lg:p-14">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-600">
-            <Wrench size={30} />
+          <div className="flex h-20 w-56 items-center justify-center rounded-xl bg-white px-4">
+            <Image
+              src="/images/equipment-logo.png"
+              alt="Rentora Logo"
+              width={200}
+              height={75}
+              className="h-auto max-h-16 w-auto object-contain"
+              priority
+            />
           </div>
 
           <h1 className="mt-8 text-4xl font-bold leading-tight">
@@ -113,10 +135,15 @@ export default function LoginPage() {
 
         {/* Right Side */}
         <div className="p-7 sm:p-10 lg:p-14">
-          <div className="mb-8 md:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#442719] text-white">
-              <Wrench size={26} />
-            </div>
+          <div className="mb-8 flex justify-center md:hidden">
+            <Image
+              src="/images/equipment-logo.png"
+              alt="Rentora Logo"
+              width={180}
+              height={65}
+              className="h-auto max-h-16 w-auto object-contain"
+              priority
+            />
           </div>
 
           <h2 className="text-3xl font-bold text-[#442719]">
@@ -248,7 +275,11 @@ export default function LoginPage() {
           <p className="mt-8 text-center text-sm text-[#806b5e]">
             Don&apos;t have an account?{" "}
             <Link
-              href="/register"
+              href={
+                redirectTo === "/dashboard"
+                  ? "/register"
+                  : `/register?redirect=${encodeURIComponent(redirectTo)}`
+              }
               className="font-bold text-orange-600 hover:text-orange-700"
             >
               Create Account

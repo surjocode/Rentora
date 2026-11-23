@@ -2,7 +2,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+
 import {
   LayoutDashboard,
   Package,
@@ -13,9 +15,11 @@ import {
   Users,
   Settings,
   LogOut,
-  Wrench,
   X,
+  ChartNoAxesCombined,
+  ShieldCheck,
 } from "lucide-react";
+
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -59,6 +63,11 @@ const customerLinks: DashboardLink[] = [
 // Owner Sidebar
 const ownerLinks: DashboardLink[] = [
   {
+    name: "Overview",
+    href: "/dashboard/owner",
+    icon: LayoutDashboard,
+  },
+  {
     name: "Add Equipment",
     href: "/dashboard/owner/add-equipment",
     icon: PlusCircle,
@@ -73,10 +82,25 @@ const ownerLinks: DashboardLink[] = [
     href: "/dashboard/owner/rental-requests",
     icon: ClipboardList,
   },
+  {
+    name: "Platform Analytics",
+    href: "/dashboard/owner/analytics",
+    icon: ChartNoAxesCombined,
+  },
+  {
+    name: "My Profile",
+    href: "/dashboard/owner/profile",
+    icon: UserRound,
+  },
 ];
 
 // Admin Sidebar
 const adminLinks: DashboardLink[] = [
+  {
+    name: "Dashboard Overview",
+    href: "/dashboard/admin",
+    icon: LayoutDashboard,
+  },
   {
     name: "Manage Users",
     href: "/dashboard/admin/users",
@@ -95,7 +119,12 @@ const adminLinks: DashboardLink[] = [
   {
     name: "Analytics",
     href: "/dashboard/admin/analytics",
-    icon: Settings,
+    icon: ChartNoAxesCombined,
+  },
+  {
+    name: "My Profile",
+    href: "/dashboard/admin/profile",
+    icon: UserRound,
   },
 ];
 
@@ -109,7 +138,18 @@ export default function DashboardSidebar({
   // Better Auth session
   const { data: session, isPending } = authClient.useSession();
 
-  const role = session?.user?.role;
+  const user = session?.user;
+  const role = user?.role;
+
+  // Role label
+  const roleLabel =
+    role === "admin"
+      ? "Administrator"
+      : role === "owner"
+        ? "Equipment Owner"
+        : role === "renter"
+          ? "Customer"
+          : "User";
 
   // Render navigation links
   const renderLinks = (links: DashboardLink[]) => {
@@ -119,7 +159,14 @@ export default function DashboardSidebar({
       const isActive =
         pathname === link.href ||
         (link.href !== "/dashboard" &&
-          pathname.startsWith(`${link.href}/`));
+          link.href !== "/dashboard/admin" &&
+          link.href !== "/dashboard/owner" &&
+          pathname.startsWith(`${link.href}/`)) ||
+        (link.href === "/dashboard/admin" &&
+          pathname.startsWith("/dashboard/admin") &&
+          pathname === "/dashboard/admin") ||
+        (link.href === "/dashboard/owner" &&
+          pathname === "/dashboard/owner");
 
       return (
         <Link
@@ -183,30 +230,55 @@ export default function DashboardSidebar({
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Logo */}
-        <div className="flex h-20 shrink-0 items-center justify-between border-b border-[#eee4da] px-6">
-          <Link
-            href="/"
-            onClick={onClose}
-            className="flex items-center gap-2"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#442719] text-white">
-              <Wrench size={22} />
-            </div>
-
-            <span className="text-2xl font-extrabold text-[#442719]">
-              Rentora
-            </span>
-          </Link>
-
+        {/* Close Button */}
+        <div className="flex h-14 shrink-0 items-center justify-end border-b border-[#eee4da] px-4 lg:hidden">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-[#442719] hover:bg-[#f0e7dd] lg:hidden"
+            className="rounded-lg p-2 text-[#442719] hover:bg-[#f0e7dd]"
             aria-label="Close menu"
           >
             <X size={21} />
           </button>
+        </div>
+
+        {/* Logged-in User Profile */}
+        <div className="shrink-0 border-b border-[#eee4da] p-5">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#ead7c5] bg-[#f0e7dd]">
+              {user?.image ? (
+                <Image
+                  src={user.image}
+                  alt={user.name || "User profile"}
+                  fill
+                  sizes="56px"
+                  unoptimized
+                  className="object-cover"
+                />
+              ) : (
+                <UserRound size={27} className="text-[#8b5e43]" />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate text-sm font-bold text-[#442719]">
+                {user?.name || "User"}
+              </h3>
+
+              <p className="truncate text-xs text-[#927d6d]">
+                {user?.email || "No email available"}
+              </p>
+
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#f0e7dd] px-2 py-1 text-[10px] font-semibold text-[#8b5e43]">
+                {role === "admin" ? (
+                  <ShieldCheck size={11} />
+                ) : (
+                  <UserRound size={11} />
+                )}
+                {roleLabel}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}

@@ -124,7 +124,20 @@ export const getAllEquipment = async (
 };
 
 // ==========================================
+// GET FEATURED EQUIPMENT
+// ==========================================
+
+export const getFeaturedEquipment = async (): Promise<
+  ApiResponse<Equipment[]>
+> => {
+  return apiRequest<ApiResponse<Equipment[]>>(
+    "/api/equipment/featured"
+  );
+};
+
+// ==========================================
 // GET SINGLE EQUIPMENT
+// PUBLIC ROUTE
 // ==========================================
 
 export const getEquipmentById = async (
@@ -134,7 +147,6 @@ export const getEquipmentById = async (
     `/api/equipment/${encodeURIComponent(id)}`,
     {
       method: "GET",
-      requiresAuth: true,
     }
   );
 };

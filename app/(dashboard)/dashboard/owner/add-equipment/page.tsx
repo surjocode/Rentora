@@ -21,28 +21,41 @@ import {
   type CreateEquipmentData,
 } from "@/services/equipment.service";
 
+type RentalType = "daily" | "weekly" | "monthly";
+
+const initialFormData = {
+  name: "",
+  category: "",
+  rentalType: "daily" as RentalType,
+  pricePerDay: "",
+  availableQuantity: "1",
+  condition: "Good",
+  brand: "",
+  model: "",
+  location: "",
+  description: "",
+  termsAndConditions: "",
+};
+
 export default function AddEquipmentPage() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    rentalType: "daily" as "daily" | "weekly" | "monthly",
-    pricePerDay: "",
-    availableQuantity: "1",
-    condition: "Good",
-    brand: "",
-    model: "",
-    location: "",
-    description: "",
-    termsAndConditions: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Dynamic rental price label
+  const rentalPriceLabel =
+    formData.rentalType === "daily"
+      ? "Per Day"
+      : formData.rentalType === "weekly"
+        ? "Per Week"
+        : "Per Month";
 
   // Cleanup image preview URL
   useEffect(() => {
@@ -65,6 +78,9 @@ export default function AddEquipmentPage() {
       ...previous,
       [name]: value,
     }));
+
+    setError("");
+    setSuccess("");
   };
 
   // Handle image selection
@@ -101,26 +117,10 @@ export default function AddEquipmentPage() {
     setImagePreview(previewUrl);
   };
 
-  // Reset form
-  const handleReset = () => {
-    setFormData({
-      name: "",
-      category: "",
-      rentalType: "daily",
-      pricePerDay: "",
-      availableQuantity: "1",
-      condition: "Good",
-      brand: "",
-      model: "",
-      location: "",
-      description: "",
-      termsAndConditions: "",
-    });
-
+  // Remove selected image
+  const handleRemoveImage = () => {
     setImageFile(null);
     setImagePreview("");
-    setError("");
-    setSuccess("");
 
     const fileInput = document.getElementById(
       "equipmentImage"
@@ -129,6 +129,16 @@ export default function AddEquipmentPage() {
     if (fileInput) {
       fileInput.value = "";
     }
+  };
+
+  // Reset form
+  const handleReset = () => {
+    setFormData(initialFormData);
+
+    handleRemoveImage();
+
+    setError("");
+    setSuccess("");
   };
 
   // Submit equipment
@@ -159,8 +169,12 @@ export default function AddEquipmentPage() {
     try {
       setLoading(true);
 
-      // Step 1: Upload image to ImgBB
+      // Step 1: Upload image
       const imageUrl = await uploadEquipmentImage(imageFile);
+
+      if (!imageUrl) {
+        throw new Error("Image upload failed. Please try again.");
+      }
 
       // Step 2: Prepare equipment data
       const equipmentData: CreateEquipmentData = {
@@ -178,7 +192,7 @@ export default function AddEquipmentPage() {
         image: imageUrl,
       };
 
-      // Step 3: Save equipment to MongoDB
+      // Step 3: Save equipment
       const response = await addEquipment(equipmentData);
 
       if (!response.success) {
@@ -190,7 +204,7 @@ export default function AddEquipmentPage() {
       );
 
       // Step 4: Redirect to My Equipment
-      setTimeout(() => {
+      window.setTimeout(() => {
         router.push("/dashboard/owner/my-equipment");
         router.refresh();
       }, 1200);
@@ -261,7 +275,9 @@ export default function AddEquipmentPage() {
               Equipment Information
             </h2>
 
-            <p className="text-sm text-[#9b8a7e]">Fill in the details below.</p>
+            <p className="text-sm text-[#9b8a7e]">
+              Fill in the details below.
+            </p>
           </div>
         </div>
 
@@ -403,13 +419,13 @@ export default function AddEquipmentPage() {
               </select>
             </div>
 
-            {/* Price */}
+            {/* Rental Price */}
             <div>
               <label
                 htmlFor="pricePerDay"
                 className="mb-2 block text-sm font-semibold text-[#442719]"
               >
-                Rental Price Per Day (৳) *
+                Rental Price {rentalPriceLabel} (৳) *
               </label>
 
               <input
@@ -417,6 +433,7 @@ export default function AddEquipmentPage() {
                 name="pricePerDay"
                 type="number"
                 min="1"
+                step="0.01"
                 required
                 value={formData.pricePerDay}
                 onChange={handleChange}
@@ -425,8 +442,7 @@ export default function AddEquipmentPage() {
               />
 
               <p className="mt-1 text-xs text-[#9b8a7e]">
-                Enter the daily base price. Rental calculation will use the
-                selected rental type.
+                Enter the price for each {formData.rentalType} rental period.
               </p>
             </div>
 
@@ -545,7 +561,9 @@ export default function AddEquipmentPage() {
 
           {/* Image Upload */}
           <div className="border-t border-[#eee4da] pt-6">
-            <h3 className="mb-2 font-bold text-[#442719]">Equipment Image *</h3>
+            <h3 className="mb-2 font-bold text-[#442719]">
+              Equipment Image *
+            </h3>
 
             <p className="mb-4 text-sm text-[#9b8a7e]">
               Upload a clear image of your equipment. Maximum size: 5 MB.
@@ -601,16 +619,7 @@ export default function AddEquipmentPage() {
             {imageFile && (
               <button
                 type="button"
-                onClick={() => {
-                  setImageFile(null);
-                  setImagePreview("");
-
-                  const input = document.getElementById(
-                    "equipmentImage"
-                  ) as HTMLInputElement | null;
-
-                  if (input) input.value = "";
-                }}
+                onClick={handleRemoveImage}
                 disabled={loading}
                 className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
               >

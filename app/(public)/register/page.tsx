@@ -1,16 +1,17 @@
 
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Mail,
   LockKeyhole,
   User,
-  Wrench,
   ShieldCheck,
+  Wrench,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
@@ -25,11 +26,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [redirectTo, setRedirectTo] = useState("/dashboard");
 
-  // Email and Password Registration
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+
+    if (redirect?.startsWith("/") && !redirect.startsWith("//")) {
+      setRedirectTo(redirect);
+    }
+  }, []);
+
+  // Email Registration
   const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setError("");
 
     if (password !== confirmPassword) {
@@ -49,17 +59,15 @@ export default function RegisterPage() {
         name: name.trim(),
         email: email.trim(),
         password,
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       });
 
       if (result.error) {
-        setError(
-          result.error.message || "Registration failed. Please try again."
-        );
+        setError(result.error.message || "Registration failed.");
         return;
       }
 
-      router.push("/dashboard");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -76,13 +84,11 @@ export default function RegisterPage() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: redirectTo,
       });
 
       if (result.error) {
-        setError(
-          result.error.message || "Google registration failed."
-        );
+        setError(result.error.message || "Google registration failed.");
         setGoogleLoading(false);
       }
     } catch {
@@ -97,8 +103,15 @@ export default function RegisterPage() {
 
         {/* Left Side */}
         <div className="hidden flex-col justify-center bg-[#442719] p-10 text-white md:flex lg:p-14">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-600">
-            <Wrench size={30} />
+          <div className="flex h-20 w-56 items-center justify-center rounded-xl bg-white px-4">
+            <Image
+              src="/images/equipment-logo.png"
+              alt="Rentora Logo"
+              width={200}
+              height={75}
+              className="h-auto max-h-16 w-auto object-contain"
+              priority
+            />
           </div>
 
           <h1 className="mt-8 text-4xl font-bold leading-tight">
@@ -113,16 +126,12 @@ export default function RegisterPage() {
           <div className="mt-10 space-y-5">
             <div className="flex items-center gap-3">
               <ShieldCheck className="text-orange-400" size={22} />
-              <span className="text-sm">
-                Secure Account Registration
-              </span>
+              <span className="text-sm">Secure Account Registration</span>
             </div>
 
             <div className="flex items-center gap-3">
               <Wrench className="text-orange-400" size={22} />
-              <span className="text-sm">
-                Rent or List Equipment
-              </span>
+              <span className="text-sm">Rent or List Equipment</span>
             </div>
           </div>
 
@@ -133,10 +142,15 @@ export default function RegisterPage() {
 
         {/* Right Side */}
         <div className="p-7 sm:p-10 lg:p-12">
-          <div className="mb-7 md:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#442719] text-white">
-              <Wrench size={26} />
-            </div>
+          <div className="mb-7 flex justify-center md:hidden">
+            <Image
+              src="/images/equipment-logo.png"
+              alt="Rentora Logo"
+              width={180}
+              height={65}
+              className="h-auto max-h-16 w-auto object-contain"
+              priority
+            />
           </div>
 
           <h2 className="text-3xl font-bold text-[#442719]">
@@ -147,31 +161,20 @@ export default function RegisterPage() {
             Fill in your information to join Rentora.
           </p>
 
-          {/* Error Message */}
           {error && (
             <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
               {error}
             </div>
           )}
 
-          {/* Registration Form */}
           <form onSubmit={handleRegister} className="mt-8 space-y-5">
-
-            {/* Full Name */}
             <div>
-              <label
-                htmlFor="name"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
+              <label htmlFor="name" className="mb-2 block text-sm font-semibold text-[#442719]">
                 Full Name
               </label>
 
               <div className="relative">
-                <User
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]"
-                />
-
+                <User size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]" />
                 <input
                   id="name"
                   name="name"
@@ -186,21 +189,13 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
+              <label htmlFor="email" className="mb-2 block text-sm font-semibold text-[#442719]">
                 Email Address
               </label>
 
               <div className="relative">
-                <Mail
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]"
-                />
-
+                <Mail size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]" />
                 <input
                   id="email"
                   name="email"
@@ -215,21 +210,13 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#442719]">
                 Password
               </label>
 
               <div className="relative">
-                <LockKeyhole
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]"
-                />
-
+                <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]" />
                 <input
                   id="password"
                   name="password"
@@ -249,21 +236,13 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-2 block text-sm font-semibold text-[#442719]"
-              >
+              <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-[#442719]">
                 Confirm Password
               </label>
 
               <div className="relative">
-                <LockKeyhole
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]"
-                />
-
+                <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a877a]" />
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -279,40 +258,26 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Account Type Information */}
             <div className="rounded-xl border border-[#eee5dc] bg-[#faf7f2] p-4">
               <p className="text-sm font-semibold text-[#442719]">
                 Default Account Type: Customer
               </p>
-
               <p className="mt-1 text-xs leading-5 text-[#806b5e]">
                 New accounts start with customer access. You can request
                 equipment owner access later.
               </p>
             </div>
 
-            {/* Terms */}
             <label className="flex items-start gap-2 text-sm text-[#665348]">
-              <input
-                type="checkbox"
-                name="terms"
-                required
-                className="mt-1 accent-orange-600"
-              />
-
+              <input type="checkbox" name="terms" required className="mt-1 accent-orange-600" />
               <span>
                 I agree to the{" "}
-                <Link
-                  href="/terms"
-                  className="font-semibold text-orange-600 hover:underline"
-                >
+                <Link href="/terms" className="font-semibold text-orange-600 hover:underline">
                   Terms and Conditions
-                </Link>
-                .
+                </Link>.
               </span>
             </label>
 
-            {/* Register Button */}
             <button
               type="submit"
               disabled={loading || googleLoading}
@@ -323,14 +288,12 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-[#eee5dc]" />
             <span className="text-xs text-[#9a877a]">OR</span>
             <div className="h-px flex-1 bg-[#eee5dc]" />
           </div>
 
-          {/* Google Registration */}
           <button
             type="button"
             onClick={handleGoogleRegister}
@@ -341,11 +304,14 @@ export default function RegisterPage() {
             {googleLoading ? "Connecting to Google..." : "Continue with Google"}
           </button>
 
-          {/* Login Link */}
           <p className="mt-7 text-center text-sm text-[#806b5e]">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={
+                redirectTo === "/dashboard"
+                  ? "/login"
+                  : `/login?redirect=${encodeURIComponent(redirectTo)}`
+              }
               className="font-bold text-orange-600 hover:text-orange-700"
             >
               Login

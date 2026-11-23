@@ -10,7 +10,10 @@ import ReviewsSection from "@/components/home/ReviewsSection";
 import OwnerCTA from "@/components/home/OwnerCTA";
 
 import { useCategories } from "@/hooks/use-categories";
-import { useEquipment } from "@/hooks/use-equipment";
+import {
+  useEquipment,
+  useFeaturedEquipment,
+} from "@/hooks/use-equipment";
 
 export default function HomePage() {
   const {
@@ -19,11 +22,13 @@ export default function HomePage() {
     error: categoriesError,
   } = useCategories();
 
+  // All equipment hook remains available for other requirements.
+  // Categories and Featured Equipment use separate data fetching.
   const {
-    equipment,
+    equipment: featuredEquipment,
     loading: equipmentLoading,
     error: equipmentError,
-  } = useEquipment();
+  } = useFeaturedEquipment();
 
   return (
     <>
@@ -67,7 +72,7 @@ export default function HomePage() {
               Featured Equipment
             </h2>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
                 <div
                   key={index}
@@ -84,7 +89,7 @@ export default function HomePage() {
           </p>
         </section>
       ) : (
-        <FeaturedEquipment equipment={equipment.slice(0, 6)} />
+        <FeaturedEquipment equipment={featuredEquipment} />
       )}
 
       <HowItWorks />

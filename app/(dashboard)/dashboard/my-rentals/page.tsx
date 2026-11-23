@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -21,7 +20,10 @@ import { useAuth } from "@/hooks/use-auth"
 
 import { getMyRentals, type Rental } from "@/services/rental.service"
 
-// Equipment interface
+// ==========================================
+// TYPES
+// ==========================================
+
 interface RentalEquipment {
   _id: string
   name: string
@@ -31,10 +33,13 @@ interface RentalEquipment {
   pricePerDay: number
 }
 
-// Rental interface
 interface RentalWithEquipment extends Rental {
   equipment?: RentalEquipment
 }
+
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
 
 // Format Date
 const formatDate = (date: string) => {
@@ -55,6 +60,50 @@ const formatDate = (date: string) => {
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat("en-BD").format(price)
 }
+
+// Booking Status Label
+const getBookingStatusLabel = (status: Rental["bookingStatus"]) => {
+  switch (status) {
+    case "pending_payment":
+      return "Awaiting Payment"
+
+    case "confirmed":
+      return "Confirmed"
+
+    case "completed":
+      return "Completed"
+
+    case "cancelled":
+      return "Cancelled"
+
+    default:
+      return "Unknown"
+  }
+}
+
+// Booking Status CSS
+const getBookingStatusClass = (status: Rental["bookingStatus"]) => {
+  switch (status) {
+    case "pending_payment":
+      return "bg-amber-50 text-amber-700"
+
+    case "confirmed":
+      return "bg-green-50 text-green-700"
+
+    case "completed":
+      return "bg-blue-50 text-blue-700"
+
+    case "cancelled":
+      return "bg-red-50 text-red-700"
+
+    default:
+      return "bg-gray-50 text-gray-700"
+  }
+}
+
+// ==========================================
+// MY RENTALS PAGE
+// ==========================================
 
 export default function MyRentalsPage() {
   const { user, loading: authLoading, isAuthenticated, isRenter } = useAuth()
@@ -80,7 +129,9 @@ export default function MyRentalsPage() {
         throw new Error(result.message)
       }
 
-      setRentals(result.data)
+      setRentals(
+        result.data.filter((rental) => rental.paymentStatus === "paid")
+      )
     } catch (error: unknown) {
       setError(
         error instanceof Error ? error.message : "Failed to load your bookings."
@@ -109,7 +160,8 @@ export default function MyRentalsPage() {
     const searchValue = search.trim().toLowerCase()
 
     return rentals.filter((rental) => {
-      const equipmentName = rental.equipment?.name ?? ""
+      const equipmentName = rental.equipment?.name ?? rental.equipmentName ?? ""
+
       const category = rental.equipment?.category ?? ""
       const location = rental.equipment?.location ?? ""
 
@@ -126,7 +178,7 @@ export default function MyRentalsPage() {
   const totalBookings = rentals.length
 
   const totalBookingValue = rentals.reduce(
-    (total, rental) => total + rental.totalPrice,
+    (total, rental) => total + rental.totalAmount,
     0
   )
 
@@ -306,14 +358,20 @@ export default function MyRentalsPage() {
                         {rental.equipment?.category || "Equipment"}
                       </span>
 
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-600">
-                        <CheckCircle size={15} />
-                        Booking Recorded
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${getBookingStatusClass(rental.bookingStatus)}`}
+                      >
+                        {rental.bookingStatus === "confirmed" && (
+                          <CheckCircle size={15} />
+                        )}
+
+                        {getBookingStatusLabel(rental.bookingStatus)}
                       </span>
                     </div>
 
                     <h3 className="mt-3 text-lg font-bold text-[#442719]">
                       {rental.equipment?.name ||
+                        rental.equipmentName ||
                         "Equipment no longer available"}
                     </h3>
 
@@ -339,7 +397,7 @@ export default function MyRentalsPage() {
                       <p className="text-xs text-[#9b8a7e]">Total Days</p>
 
                       <p className="mt-1 font-medium text-[#442719]">
-                        {rental.totalDays} days
+                        {rental.rentalDays} days
                       </p>
                     </div>
 
@@ -355,7 +413,7 @@ export default function MyRentalsPage() {
                       <p className="text-xs text-[#9b8a7e]">Total Price</p>
 
                       <p className="mt-1 font-bold text-[#ea580c]">
-                        ৳{formatPrice(rental.totalPrice)}
+                        ৳{formatPrice(rental.totalAmount)}
                       </p>
                     </div>
                   </div>
@@ -367,9 +425,10 @@ export default function MyRentalsPage() {
                       Booked on {formatDate(rental.createdAt)}
                     </p>
 
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                      <CheckCircle size={14} />
-                      Booking Recorded
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${getBookingStatusClass(rental.bookingStatus)}`}
+                    >
+                      {getBookingStatusLabel(rental.bookingStatus)}
                     </span>
                   </div>
                 </div>
@@ -384,9 +443,7 @@ export default function MyRentalsPage() {
           </div>
 
           <h2 className="mt-5 text-xl font-bold text-[#442719]">
-            {rentals.length === 0
-              ? "No Bookings Yet"
-              : "No Matching Bookings"}
+            {rentals.length === 0 ? "No Bookings Yet" : "No Matching Bookings"}
           </h2>
 
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[#9b8a7e]">
